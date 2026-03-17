@@ -31,6 +31,9 @@ type PlannerFormProps = {
     id: string;
     recipeId: string;
     notes: string | null;
+    recipe: {
+      name: string;
+    };
     portions: Array<{
       personId: string;
       servings: number;
@@ -52,7 +55,7 @@ export function PlannerForm({
       <div className={styles.panel}>
         <EmptyState
           title="Selecciona un hueco"
-          description="Haz clic en cualquier bloque del planner para asignar una receta y definir cuántos servings toma cada persona."
+          description="Haz clic en cualquier bloque del planner para asignar una receta y definir cuantos servings toma cada persona."
         />
       </div>
     );
@@ -63,7 +66,7 @@ export function PlannerForm({
       <div className={styles.panel}>
         <EmptyState
           title="Primero hace falta al menos una receta"
-          description="El planner usa recetas base. Crea una receta y vuelve aquí para asignarla a la semana."
+          description="El planner usa recetas base. Crea una receta y vuelve aqui para asignarla a la semana."
           action={<ButtonLink href="/recipes/new">Crear receta</ButtonLink>}
         />
       </div>
@@ -82,8 +85,11 @@ export function PlannerForm({
             {mealTypeLabels[selectedSlot]}
           </h2>
           <p className={styles.description}>
-            La receta define el serving base. Aquí solo ajustas cuánto come Miguel y cuánto come Ana en esta comida concreta.
+            La receta define el serving base. Aqui ajustas solo la cantidad concreta de Miguel y Ana para este slot.
           </p>
+          {existingMeal ? (
+            <p className={styles.description}>Receta actual: {existingMeal.recipe.name}</p>
+          ) : null}
         </div>
       </Card>
 
@@ -102,7 +108,7 @@ export function PlannerForm({
           >
             {recipePool.map((recipe) => (
               <option key={recipe.id} value={recipe.id}>
-                {recipe.isFavorite ? "★ " : ""}
+                {recipe.isFavorite ? "[Favorita] " : ""}
                 {recipe.name}
               </option>
             ))}
@@ -122,11 +128,8 @@ export function PlannerForm({
                   min="0.05"
                   name={`servings:${person.id}`}
                   label={`${person.name} servings`}
-                  defaultValue={
-                    existingPortion?.servings ??
-                    person.defaultPortionMultiplier ??
-                    1
-                  }
+                  defaultValue={existingPortion?.servings ?? person.defaultPortionMultiplier ?? 1}
+                  hint="Puedes afinar en pasos de 0.05"
                   required
                 />
               );
@@ -137,11 +140,14 @@ export function PlannerForm({
             name="notes"
             label="Notas"
             defaultValue={existingMeal?.notes ?? ""}
-            hint="Opcional"
+            hint="Opcional. Por ejemplo: batch cooking, leftovers o cambios de ultima hora."
           />
 
           <div className={styles.actions}>
-            <SubmitButton label={existingMeal ? "Guardar cambios" : "Guardar comida"} pendingLabel="Guardando..." />
+            <SubmitButton
+              label={existingMeal ? "Guardar cambios" : "Guardar comida"}
+              pendingLabel="Guardando..."
+            />
             <ButtonLink href={`/planner?weekStart=${weekStart}`} variant="secondary">
               Cerrar
             </ButtonLink>
@@ -156,7 +162,7 @@ export function PlannerForm({
             <input type="hidden" name="weekStart" value={weekStart} />
             <ConfirmSubmitButton
               type="submit"
-              message="Delete this planned meal from the week?"
+              message="Delete this planned meal from the current week?"
             >
               Eliminar comida
             </ConfirmSubmitButton>

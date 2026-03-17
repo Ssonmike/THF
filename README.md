@@ -1,26 +1,41 @@
 # Nutri Week
 
-Aplicacion web self-hosted para planificacion nutricional semanal de dos personas: Miguel y Ana.
+Nutri Week es una aplicacion web self-hosted para planificacion nutricional semanal de Miguel y Ana.
 
-El proyecto esta construido como un MVP real sobre Next.js App Router, TypeScript, Prisma y SQLite. La receta define el serving base y el planner semanal guarda las porciones concretas de cada persona para cada comida.
+La receta define ingredientes y nutricion por 1 serving estandar. El planner semanal guarda cuanto come cada persona en cada slot. A partir de eso la app calcula dashboard diario, nutricion real y lista de la compra agregada con checklist persistente por semana.
 
 ## Stack
 
-- Next.js con App Router
+- Next.js App Router
 - TypeScript
-- CSS Modules + `app/globals.css`
 - Prisma
 - SQLite
 - Zod
-- date-fns
-- Vitest para tests de logica critica
+- CSS Modules
+- Vitest
+
+## Que incluye esta version
+
+- CRUD de recetas con duplicado rapido
+- planner semanal por slots
+- servings independientes para Miguel y Ana
+- guardado robusto con transacciones Prisma en planner
+- duplicado de semana con confirmacion explicita al sobrescribir
+- dashboard diario mas claro
+- shopping list agregada con checklist persistente por semana
+- filtros pendientes / todos / comprados
+- exportacion CSV y copia al portapapeles desde la lista
+- scripts de backup, restore y exportacion completa de datos
+- Docker y Compose con volumen persistente
+- paginas `error` y `not-found`
 
 ## Requisitos
 
-- Node.js 22 o superior
-- npm 10 o superior
+- Node.js 22+
+- npm 10+
+- Docker opcional
 
-## Instalacion
+## Instalacion local
 
 1. Instala dependencias:
 
@@ -28,33 +43,53 @@ El proyecto esta construido como un MVP real sobre Next.js App Router, TypeScrip
 npm install
 ```
 
-2. Genera el cliente de Prisma:
+2. Genera Prisma Client:
 
 ```bash
 npm run prisma:generate
 ```
 
-3. Crea la base de datos con migracion inicial:
+3. Aplica migraciones:
 
 ```bash
 npm run prisma:migrate:dev -- --name init
 ```
 
-4. Carga el seed:
+4. Carga datos de ejemplo:
 
 ```bash
 npm run prisma:seed
 ```
 
-5. Arranca la aplicacion:
+5. Arranca desarrollo:
 
 ```bash
 npm run dev
 ```
 
-La app quedara disponible en [http://localhost:3000](http://localhost:3000).
+La app queda en [http://localhost:3000](http://localhost:3000).
 
-## Scripts
+## Desarrollo
+
+- `npm run dev`
+- `npm run lint`
+- `npm run test`
+
+## Produccion local
+
+1. Genera build:
+
+```bash
+npm run build
+```
+
+2. Arranca en modo produccion:
+
+```bash
+npm run start
+```
+
+## Scripts utiles
 
 - `npm run dev`
 - `npm run build`
@@ -64,18 +99,153 @@ La app quedara disponible en [http://localhost:3000](http://localhost:3000).
 - `npm run prisma:generate`
 - `npm run prisma:migrate:dev`
 - `npm run prisma:seed`
+- `npm run db:reset`
+- `npm run backup`
+- `npm run restore -- <ruta-al-backup.db>`
+- `npm run export:data`
+- `npm run docker:up`
+- `npm run docker:down`
 
-Tambien existen aliases equivalentes para:
+Tambien existen aliases:
 
 - `npm run "prisma generate"`
 - `npm run "prisma migrate dev"`
 - `npm run "prisma db seed"`
 
+## Ubicacion de la base de datos
+
+En local, con la configuracion por defecto:
+
+- `DATABASE_URL="file:./dev.db"`
+- Prisma resuelve esa ruta relativa desde `prisma/schema.prisma`
+- el fichero real acaba en `prisma/dev.db`
+
+En Docker:
+
+- la base vive en `/app/data/dev.db`
+- el volumen `nutri_week_data` conserva los datos entre reinicios
+
+## Checklist de compra persistente
+
+La persistencia del checklist se guarda por semana en la tabla `ShoppingListItemState`.
+
+Comportamiento:
+
+- cada item se identifica por una clave normalizada `nombre + unidad`
+- el estado se conserva al recargar
+- al cambiar planner de esa semana, el estado se limpia de forma segura para evitar inconsistencias
+- el estado esta aislado por `WeeklyPlan`
+
+## Backup y restore
+
+### Backup rapido
+
+```bash
+npm run backup
+```
+
+Esto copia la base SQLite actual a `backups/nutri-week-<timestamp>.db`.
+
+### Restore
+
+```bash
+npm run restore -- backups/nutri-week-2026-03-17T10-00-00-000Z.db
+```
+
+Comportamiento del restore:
+
+- crea un backup de seguridad del estado actual
+- reemplaza la base activa por el fichero indicado
+
+## Exportacion de datos
+
+```bash
+npm run export:data
+```
+
+Genera un JSON en `exports/` con:
+
+- personas
+- recetas e ingredientes
+- semanas
+- planned meals
+- porciones
+- estado persistente de shopping list
+
+## Docker
+
+### Arranque
+
+```bash
+npm run docker:up
+```
+
+o directamente:
+
+```bash
+docker compose up -d --build
+```
+
+### Parada
+
+```bash
+npm run docker:down
+```
+
+### Detalles
+
+- `Dockerfile` compila y arranca Next.js en produccion
+- `compose.yaml` crea un volumen persistente para SQLite
+- el contenedor ejecuta `prisma migrate deploy` al arrancar
+
+### Seed en Docker
+
+Si quieres datos de ejemplo en el contenedor:
+
+```bash
+docker compose exec nutri-week npm run prisma:seed
+```
+
+## Reverse proxy opcional
+
+Puedes colocar la app detras de Nginx o Caddy apuntando al puerto `3000`.
+
+Ejemplo rapido con Nginx:
+
+```nginx
+server {
+  listen 80;
+  server_name nutri-week.local;
+
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+```
+
+## PM2 o systemd
+
+PM2:
+
+```bash
+npm run build
+pm2 start npm --name nutri-week -- run start
+```
+
+systemd:
+
+- define `WorkingDirectory` en la raiz del proyecto
+- usa `ExecStart=/usr/bin/npm run start`
+- exporta `DATABASE_URL`
+
 ## Estructura
 
 ```text
 app/
-  page.tsx
+  api/
   planner/
   recipes/
   shopping-list/
@@ -91,40 +261,34 @@ lib/
   utils/
   validators/
 prisma/
+  migrations/
   schema.prisma
   seed.ts
+scripts/
 tests/
 ```
 
-## Modelo funcional
+## Decisiones tecnicas principales
 
-- `Recipe`: define ingredientes y nutricion por 1 serving estandar.
-- `WeeklyPlan`: representa una semana concreta con inicio en Monday.
-- `PlannedMeal`: asigna una receta a un dia + franja.
-- `PlannedMealPortion`: guarda cuantos servings toma cada persona en esa comida concreta.
+- dominio correcto mantenido: receta base por serving, porciones reales en `PlannedMealPortion`
+- planner y duplicado de semana protegidos con transacciones
+- borrado de recetas seguro en servidor
+- checklist persistente separada del agregado, pero ligada relacionalmente a la semana
+- reset deliberado del checklist al cambiar el planner para evitar estados corruptos
+- normalizacion simple y explicita para shopping list
+- backup y restore basados en copia real de SQLite, sin servicios externos
 
-Esto permite:
+## Testing
 
-- reutilizar la misma receta en dias diferentes
-- calcular cantidades reales por persona
-- generar lista de compra agregada
-- sumar nutricion diaria sin duplicar recetas
+Se incluyen tests para:
 
-## Decisiones tecnicas
-
-- Borrado de recetas seguro: si una receta esta usada en el planner no se elimina.
-- Persistencia real: SQLite a traves de Prisma, sin JSON como pseudo base de datos.
-- Normalizacion de unidades limitada y predecible: `kg -> g` y `l -> ml`.
-- Planner sin drag and drop: la edicion ocurre con formularios claros por slot.
-- Mutaciones con Server Actions y validacion Zod.
-- La logica critica vive fuera de JSX en `lib/services` y `lib/utils`.
-
-## Tests
-
-Se incluyen tests basicos para:
-
-- agregacion de lista de la compra
-- calculo nutricional por persona
+- agregacion de shopping list
+- normalizacion y formato
+- helpers del planner
+- duplicado seguro
+- higiene de datos de recetas
+- bloqueo de borrado de recetas en uso
+- resumen nutricional
 
 Ejecucion:
 
@@ -132,44 +296,40 @@ Ejecucion:
 npm run test
 ```
 
-## Seed incluido
+## Troubleshooting
 
-El seed crea:
+### `prisma migrate dev` falla en Windows sandbox
 
-- Personas: Miguel y Ana
-- 5 recetas realistas
-- 1 semana de ejemplo con varias comidas asignadas
+En algunos entornos restringidos de Windows el motor de Prisma puede devolver `EPERM`.
 
-## Despliegue self-hosted simple
+Opciones:
 
-### Opcion 1: VPS con Node
+- ejecutar el comando fuera del sandbox o terminal restringida
+- usar Docker
+- aplicar primero la migracion existente y luego lanzar `npm run prisma:seed`
 
-1. Copia el proyecto al servidor.
-2. Ejecuta `npm install`.
-3. Ejecuta `npm run prisma:generate`.
-4. Ejecuta `npm run prisma:migrate:dev -- --name init` o la migracion correspondiente.
-5. Ejecuta `npm run prisma:seed` si quieres datos iniciales.
-6. Ejecuta `npm run build`.
-7. Ejecuta `npm run start`.
+### La app arranca pero no guarda datos
 
-Puedes ponerlo detras de Nginx o Caddy y gestionarlo con `pm2` o `systemd`.
+Comprueba:
 
-### Opcion 2: Docker
+- que `DATABASE_URL` apunta a una ruta escribible
+- que el proceso tiene permisos de escritura sobre la carpeta de la base
+- que en Docker el volumen esta montado correctamente
 
-La aplicacion no depende de servicios externos. Basta con persistir el archivo SQLite y exponer el puerto del proceso Next.js.
+### El checklist no coincide tras cambiar el planner
 
-## Posibles mejoras fase 2
+Es intencional: al cambiar comidas o porciones de una semana, el estado del checklist de esa semana se reinicia para mantener integridad.
 
-- categorias o tags de recetas
-- vista mensual o historial de semanas
-- exportacion de lista de compra
-- notas persistentes de compra
-- calculo de macros objetivo por persona
-- duplicado de recetas
+## Limitaciones conocidas
+
+- la normalizacion de ingredientes no intenta resolver equivalencias complejas
+- no hay importador completo desde la UI
+- la exportacion completa de datos se hace por script
+
+## Roadmap fase 2
+
+- importacion segura de datos exportados
 - soporte para mas personas
-
-## Notas
-
-- `.env` ya incluye `DATABASE_URL="file:./dev.db"`.
-- El build ejecuta `prisma generate` antes de compilar.
-- Si prefieres una base de datos diferente mas adelante, el modelo relacional ya esta preparado para crecer sin rehacer el dominio.
+- objetivos de macros por persona
+- historial avanzado de semanas
+- exportacion imprimible del planner

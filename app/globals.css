@@ -88,7 +88,7 @@ textarea {
 .inlineFilters {
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr) auto;
+  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr) auto auto;
   align-items: end;
 }
 
@@ -120,6 +120,11 @@ textarea {
 .sectionHeading {
   margin: 0 0 0.85rem;
   font-size: 1.05rem;
+}
+
+.miniListRow {
+  padding: 0.35rem 0;
+  color: var(--color-muted-strong);
 }
 
 .mutedText {
@@ -158,6 +163,28 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.9rem;
+  color: var(--color-muted-strong);
+  font-weight: 600;
+}
+
+.plainAction {
+  border: none;
+  background: transparent;
+  color: var(--color-accent-strong);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.plainAction:hover {
+  color: var(--color-ink);
 }
 
 .pill {

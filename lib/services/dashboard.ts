@@ -1,7 +1,11 @@
 import { DayOfWeek, MealType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { mealTypeLabels, mealTypeOptions } from "@/lib/constants/meal";
-import { getCurrentDayOfWeek, getWeekStart } from "@/lib/utils/date";
+import {
+  getCurrentDayOfWeek,
+  getDayDateFromWeek,
+  getWeekStart
+} from "@/lib/utils/date";
 import {
   addNutrition,
   emptyNutritionVector,
@@ -34,7 +38,10 @@ export function calculateNutritionByPerson(
     };
   }>
 ) {
-  const totals = new Map<string, { personId: string; personName: string; totals: NutritionVector }>();
+  const totals = new Map<
+    string,
+    { personId: string; personName: string; totals: NutritionVector }
+  >();
 
   for (const meal of meals) {
     for (const portion of meal.portions) {
@@ -73,7 +80,6 @@ export async function getDashboardData() {
     where: { weekStartDate },
     include: {
       plannedMeals: {
-        where: { dayOfWeek: currentDay },
         include: {
           recipe: true,
           portions: {
@@ -81,15 +87,16 @@ export async function getDashboardData() {
               person: true
             }
           }
-        },
-        orderBy: {
-          mealSlot: "asc"
         }
       }
     }
   });
 
-  const meals: DashboardMeal[] = (weeklyPlan?.plannedMeals ?? [])
+  const todaysMeals = (weeklyPlan?.plannedMeals ?? []).filter(
+    (meal) => meal.dayOfWeek === currentDay
+  );
+
+  const meals: DashboardMeal[] = todaysMeals
     .map((meal) => ({
       id: meal.id,
       recipeName: meal.recipe.name,
@@ -117,14 +124,36 @@ export async function getDashboardData() {
         mealTypeOptions.findIndex((option) => option.value === b.mealSlot)
     );
 
+  const remainingMeals = (weeklyPlan?.plannedMeals ?? [])
+    .filter((meal) => meal.dayOfWeek !== currentDay)
+    .sort(
+      (a, b) =>
+        getDayDateFromWeek(a.dayOfWeek, weekStartDate).getTime() -
+          getDayDateFromWeek(b.dayOfWeek, weekStartDate).getTime() ||
+        mealTypeOptions.findIndex((option) => option.value === a.mealSlot) -
+          mealTypeOptions.findIndex((option) => option.value === b.mealSlot)
+    )
+    .slice(0, 3)
+    .map((meal) => ({
+      id: meal.id,
+      recipeName: meal.recipe.name,
+      dayOfWeek: meal.dayOfWeek,
+      mealSlotLabel: mealTypeLabels[meal.mealSlot]
+    }));
+
   return {
     today,
     currentDay,
     weekStartDate,
     weeklyPlan,
     meals,
+    nextMeals: remainingMeals,
+    weekSummary: {
+      plannedMeals: weeklyPlan?.plannedMeals.length ?? 0,
+      distinctRecipes: new Set((weeklyPlan?.plannedMeals ?? []).map((meal) => meal.recipeId)).size
+    },
     nutritionByPerson: calculateNutritionByPerson(
-      (weeklyPlan?.plannedMeals ?? []).map((meal) => ({
+      todaysMeals.map((meal) => ({
         recipe: meal.recipe,
         portions: meal.portions.map((portion) => ({
           personId: portion.personId,

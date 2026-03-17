@@ -2,7 +2,7 @@ export function buildNoticeUrl(
   pathname: string,
   options?: {
     message?: string;
-    tone?: "success" | "error";
+    tone?: "success" | "error" | "warning";
     params?: Record<string, string | undefined>;
   }
 ) {

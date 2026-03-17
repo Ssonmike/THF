@@ -5,16 +5,23 @@ export function formatNumber(value: number, maximumFractionDigits = 2) {
   }).format(value);
 }
 
+export function roundTo(value: number, decimals = 2) {
+  const precision = 10 ** decimals;
+  return Math.round((value + Number.EPSILON) * precision) / precision;
+}
+
 export function formatQuantity(value: number) {
-  if (Number.isInteger(value)) {
-    return String(value);
+  const rounded = roundTo(value, value < 10 ? 2 : 1);
+
+  if (Number.isInteger(rounded)) {
+    return String(rounded);
   }
 
-  if (value < 10) {
-    return formatNumber(value, 2);
+  if (rounded < 10) {
+    return formatNumber(rounded, 2);
   }
 
-  return formatNumber(value, 1);
+  return formatNumber(rounded, 1);
 }
 
 export function titleCase(text: string) {

@@ -16,3 +16,9 @@
   color: var(--color-danger);
   border-color: rgba(157, 43, 43, 0.16);
 }
+
+.warning {
+  background: rgba(159, 109, 33, 0.08);
+  color: #7c5721;
+  border-color: rgba(159, 109, 33, 0.18);
+}

@@ -3,7 +3,7 @@ import styles from "@/components/ui/FlashMessage.module.css";
 
 type FlashMessageProps = {
   message?: string;
-  tone?: "success" | "error";
+  tone?: "success" | "error" | "warning";
 };
 
 export function FlashMessage({ message, tone = "success" }: FlashMessageProps) {

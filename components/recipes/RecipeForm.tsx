@@ -68,18 +68,36 @@ export function RecipeForm({
       : [emptyIngredient]
   );
 
+  function updateIngredient(index: number, nextValue: Partial<IngredientDraft>) {
+    setIngredients((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...nextValue } : item
+      )
+    );
+  }
+
+  function moveIngredient(index: number, direction: -1 | 1) {
+    setIngredients((current) => {
+      const targetIndex = index + direction;
+
+      if (targetIndex < 0 || targetIndex >= current.length) {
+        return current;
+      }
+
+      const next = [...current];
+      const currentItem = next[index];
+      next[index] = next[targetIndex];
+      next[targetIndex] = currentItem;
+      return next;
+    });
+  }
+
   return (
     <form action={action} className={styles.form}>
       <Card className={styles.section}>
         <h2 className={styles.sectionTitle}>Base recipe</h2>
         <div className={styles.grid}>
-          <Input
-            id="name"
-            name="name"
-            label="Nombre"
-            defaultValue={initialValues?.name}
-            required
-          />
+          <Input id="name" name="name" label="Nombre" defaultValue={initialValues?.name} required />
           <Select
             id="mealType"
             name="mealType"
@@ -112,7 +130,7 @@ export function RecipeForm({
         <Textarea
           id="description"
           name="description"
-          label="Descripción"
+          label="Descripcion"
           defaultValue={initialValues?.description ?? ""}
         />
         <Textarea
@@ -121,12 +139,7 @@ export function RecipeForm({
           label="Instrucciones"
           defaultValue={initialValues?.instructions ?? ""}
         />
-        <Textarea
-          id="notes"
-          name="notes"
-          label="Notas"
-          defaultValue={initialValues?.notes ?? ""}
-        />
+        <Textarea id="notes" name="notes" label="Notas" defaultValue={initialValues?.notes ?? ""} />
       </Card>
 
       <Card className={styles.section}>
@@ -149,13 +162,7 @@ export function RecipeForm({
               <Input
                 label="Ingrediente"
                 value={ingredient.itemName}
-                onChange={(event) =>
-                  setIngredients((current) =>
-                    current.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, itemName: event.target.value } : item
-                    )
-                  )
-                }
+                onChange={(event) => updateIngredient(index, { itemName: event.target.value })}
                 required
               />
               <Input
@@ -164,25 +171,13 @@ export function RecipeForm({
                 min="0.01"
                 step="0.01"
                 value={ingredient.quantity}
-                onChange={(event) =>
-                  setIngredients((current) =>
-                    current.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, quantity: event.target.value } : item
-                    )
-                  )
-                }
+                onChange={(event) => updateIngredient(index, { quantity: event.target.value })}
                 required
               />
               <Select
                 label="Unidad"
                 value={ingredient.unit}
-                onChange={(event) =>
-                  setIngredients((current) =>
-                    current.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, unit: event.target.value } : item
-                    )
-                  )
-                }
+                onChange={(event) => updateIngredient(index, { unit: event.target.value })}
               >
                 {supportedUnits.map((unit) => (
                   <option key={unit} value={unit}>
@@ -194,25 +189,29 @@ export function RecipeForm({
             <Textarea
               label="Notas del ingrediente"
               value={ingredient.notes}
-              onChange={(event) =>
-                setIngredients((current) =>
-                  current.map((item, itemIndex) =>
-                    itemIndex === index ? { ...item, notes: event.target.value } : item
-                  )
-                )
-              }
+              onChange={(event) => updateIngredient(index, { notes: event.target.value })}
             />
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() =>
-                setIngredients((current) =>
-                  current.length === 1 ? current : current.filter((_, itemIndex) => itemIndex !== index)
-                )
-              }
-            >
-              Eliminar ingrediente
-            </Button>
+            <div className={styles.actions}>
+              <Button type="button" variant="ghost" onClick={() => moveIngredient(index, -1)}>
+                Subir
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => moveIngredient(index, 1)}>
+                Bajar
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() =>
+                  setIngredients((current) =>
+                    current.length === 1
+                      ? current
+                      : current.filter((_, itemIndex) => itemIndex !== index)
+                  )
+                }
+              >
+                Eliminar ingrediente
+              </Button>
+            </div>
           </div>
         ))}
         <Button
@@ -220,19 +219,19 @@ export function RecipeForm({
           variant="secondary"
           onClick={() => setIngredients((current) => [...current, emptyIngredient])}
         >
-          Añadir ingrediente
+          Anadir ingrediente
         </Button>
       </Card>
 
       <Card className={styles.section}>
-        <h2 className={styles.sectionTitle}>Nutrición por 1 serving</h2>
+        <h2 className={styles.sectionTitle}>Nutricion por 1 serving</h2>
         <div className={styles.grid}>
           <Input
             type="number"
             step="0.1"
             min="0"
             name="nutritionCaloriesPerServing"
-            label="Calorías"
+            label="Calorias"
             defaultValue={initialValues?.nutritionCaloriesPerServing ?? ""}
           />
           <Input
@@ -240,7 +239,7 @@ export function RecipeForm({
             step="0.1"
             min="0"
             name="nutritionProteinPerServing"
-            label="Proteína (g)"
+            label="Proteina (g)"
             defaultValue={initialValues?.nutritionProteinPerServing ?? ""}
           />
           <Input

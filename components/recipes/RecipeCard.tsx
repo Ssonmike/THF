@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MealType } from "@prisma/client";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmSubmitButton } from "@/components/ui/ConfirmSubmitButton";
 import { mealTypeLabels } from "@/lib/constants/meal";
@@ -26,9 +27,10 @@ type RecipeCardProps = {
     };
   };
   deleteAction: (formData: FormData) => Promise<void>;
+  duplicateAction: (formData: FormData) => Promise<void>;
 };
 
-export function RecipeCard({ recipe, deleteAction }: RecipeCardProps) {
+export function RecipeCard({ recipe, deleteAction, duplicateAction }: RecipeCardProps) {
   return (
     <Card className={styles.card}>
       <div className={styles.top}>
@@ -48,7 +50,7 @@ export function RecipeCard({ recipe, deleteAction }: RecipeCardProps) {
       </div>
 
       <p className={styles.description}>
-        {recipe.description || "Sin descripción. Se puede editar para añadir contexto o preparación."}
+        {recipe.description || "Sin descripcion. Puedes editarla para anadir mas contexto o preparacion."}
       </p>
 
       <div className={styles.ingredients}>
@@ -62,6 +64,12 @@ export function RecipeCard({ recipe, deleteAction }: RecipeCardProps) {
       <div className={styles.actions}>
         <Link href={`/recipes/${recipe.id}`}>Ver detalle</Link>
         <Link href={`/recipes/${recipe.id}/edit`}>Editar</Link>
+        <form action={duplicateAction}>
+          <input type="hidden" name="recipeId" value={recipe.id} />
+          <Button type="submit" variant="ghost" size="small">
+            Duplicar
+          </Button>
+        </form>
         <form action={deleteAction}>
           <input type="hidden" name="recipeId" value={recipe.id} />
           <input type="hidden" name="redirectTo" value="/recipes" />

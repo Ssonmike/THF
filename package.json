@@ -1,6 +1,6 @@
 {
   "name": "nutri-week",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,6 +12,12 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
+    "db:reset": "prisma migrate reset --force && prisma db seed",
+    "backup": "node scripts/backup-db.mjs",
+    "restore": "node scripts/restore-db.mjs",
+    "export:data": "node scripts/export-data.mjs",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
     "prisma generate": "prisma generate",
     "prisma migrate dev": "prisma migrate dev",
     "prisma db seed": "prisma db seed"

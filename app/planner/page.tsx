@@ -6,6 +6,7 @@ import { PlannerGrid } from "@/components/planner/PlannerGrid";
 import { Button } from "@/components/ui/Button";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Card } from "@/components/ui/Card";
+import { ConfirmSubmitButton } from "@/components/ui/ConfirmSubmitButton";
 import { FlashMessage } from "@/components/ui/FlashMessage";
 import { parseWeekStartParam, toDateInputValue } from "@/lib/utils/date";
 import { getPlannerData, getPlannedMealByCoordinates } from "@/lib/services/planner";
@@ -16,7 +17,8 @@ type PlannerPageProps = {
     day?: DayOfWeek;
     slot?: MealType;
     notice?: string;
-    tone?: "success" | "error";
+    tone?: "success" | "error" | "warning";
+    confirmOverwrite?: string;
   }>;
 };
 
@@ -27,9 +29,7 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
   const plannerData = await getPlannerData(weekStartDate);
 
   const selectedDay =
-    params.day && Object.values(DayOfWeek).includes(params.day)
-      ? params.day
-      : undefined;
+    params.day && Object.values(DayOfWeek).includes(params.day) ? params.day : undefined;
   const selectedSlot =
     params.slot && Object.values(MealType).includes(params.slot) ? params.slot : undefined;
 
@@ -38,11 +38,14 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
       ? await getPlannedMealByCoordinates(plannerData.weeklyPlan.id, selectedDay, selectedSlot)
       : null;
 
+  const destinationHasMeals = plannerData.meta.plannedMealCount > 0;
+  const overwriteConfirmed = params.confirmOverwrite === "true";
+
   return (
     <div className="pageStack">
       <PageHeader
         title="Planner semanal"
-        description="Asigna recetas a cada día y ajusta servings concretos para Miguel y Ana sin tocar la receta base."
+        description="Edición robusta por slot, servings por persona y duplicado seguro de semanas sin romper la receta base."
         actions={
           <>
             <ButtonLink
@@ -62,22 +65,40 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
       />
       <FlashMessage message={params.notice} tone={params.tone} />
 
-      <Card>
-        <div className="splitRow">
-          <div>
-            <h2 className="sectionHeading">{plannerData.navigation.label}</h2>
-            <p className="mutedText">
-              Monday es el inicio de semana. Puedes duplicar la anterior y retocar solo lo necesario.
-            </p>
-          </div>
-          <form action={duplicatePreviousWeekAction}>
+      <div className="statsGrid">
+        <Card>
+          <h2 className="sectionHeading">{plannerData.navigation.label}</h2>
+          <p className="mutedText">Semana activa con inicio en Monday.</p>
+        </Card>
+        <Card>
+          <h2 className="sectionHeading">Slots planificados</h2>
+          <p className="pageDescription">{plannerData.meta.plannedMealCount}</p>
+        </Card>
+        <Card>
+          <h2 className="sectionHeading">Acción rápida</h2>
+          <form action={duplicatePreviousWeekAction} className="cluster">
             <input type="hidden" name="weekStart" value={weekStart} />
-            <Button type="submit" variant="secondary">
-              Duplicar semana previa
-            </Button>
+            <input
+              type="hidden"
+              name="overwrite"
+              value={destinationHasMeals && overwriteConfirmed ? "true" : "false"}
+            />
+            {destinationHasMeals ? (
+              <ConfirmSubmitButton
+                type="submit"
+                variant={overwriteConfirmed ? "danger" : "secondary"}
+                message={`This week already has ${plannerData.meta.plannedMealCount} meals. Overwrite it with the previous week?`}
+              >
+                {overwriteConfirmed ? "Confirmar duplicado" : "Duplicar semana previa"}
+              </ConfirmSubmitButton>
+            ) : (
+              <Button type="submit" variant="secondary">
+                Duplicar semana previa
+              </Button>
+            )}
           </form>
-        </div>
-      </Card>
+        </Card>
+      </div>
 
       <div className="plannerLayout">
         <PlannerGrid

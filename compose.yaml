@@ -1,0 +1,16 @@
+services:
+  nutri-week:
+    build: .
+    container_name: nutri-week
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: file:/app/data/dev.db
+      NODE_ENV: production
+      PORT: 3000
+    volumes:
+      - nutri_week_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  nutri_week_data:

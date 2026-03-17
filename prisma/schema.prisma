@@ -76,6 +76,7 @@ model WeeklyPlan {
   weekStartDate DateTime     @unique
   notes         String?
   plannedMeals  PlannedMeal[]
+  shoppingItemStates ShoppingListItemState[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 }
@@ -110,4 +111,20 @@ model PlannedMealPortion {
 
   @@unique([plannedMealId, personId])
   @@index([personId])
+}
+
+model ShoppingListItemState {
+  id           String     @id @default(cuid())
+  weeklyPlanId String
+  aggregateKey String
+  displayName  String
+  displayUnit  String
+  isChecked    Boolean    @default(false)
+  checkedAt    DateTime?
+  weeklyPlan   WeeklyPlan @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([weeklyPlanId, aggregateKey])
+  @@index([weeklyPlanId, isChecked])
 }

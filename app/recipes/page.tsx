@@ -1,4 +1,5 @@
 import { MealType } from "@prisma/client";
+import { deleteRecipeAction, duplicateRecipeAction } from "@/app/recipes/actions";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
 import { Button } from "@/components/ui/Button";
@@ -10,14 +11,14 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { mealTypeOptions } from "@/lib/constants/meal";
 import { getRecipes } from "@/lib/services/recipes";
-import { deleteRecipeAction } from "@/app/recipes/actions";
 
 type RecipesPageProps = {
   searchParams: Promise<{
     search?: string;
     mealType?: MealType | "ALL";
+    favoritesOnly?: string;
     notice?: string;
-    tone?: "success" | "error";
+    tone?: "success" | "error" | "warning";
   }>;
 };
 
@@ -25,14 +26,15 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
   const params = await searchParams;
   const recipes = await getRecipes({
     search: params.search,
-    mealType: params.mealType ?? "ALL"
+    mealType: params.mealType ?? "ALL",
+    favoritesOnly: params.favoritesOnly === "true"
   });
 
   return (
     <div className="pageStack">
       <PageHeader
         title="Recetas"
-        description="Repositorio central para guardar, revisar y reutilizar las recetas base de la semana."
+        description="Repositorio base de recetas con favoritos visibles, búsqueda útil y duplicado rápido para reutilizar sin tocar la original."
         actions={<ButtonLink href="/recipes/new">Nueva receta</ButtonLink>}
       />
       <FlashMessage message={params.notice} tone={params.tone} />
@@ -42,7 +44,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
           <Input
             name="search"
             label="Buscar"
-            placeholder="Arroz, tortilla, yogur..."
+            placeholder="Arroz, yogur, pollo, atun..."
             defaultValue={params.search ?? ""}
           />
           <Select name="mealType" label="Tipo" defaultValue={params.mealType ?? "ALL"}>
@@ -53,6 +55,15 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
               </option>
             ))}
           </Select>
+          <label className="checkboxLabel">
+            <input
+              type="checkbox"
+              name="favoritesOnly"
+              value="true"
+              defaultChecked={params.favoritesOnly === "true"}
+            />
+            Solo favoritas
+          </label>
           <div className="cluster">
             <Button type="submit" variant="secondary">
               Aplicar
@@ -67,13 +78,18 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
       {recipes.length > 0 ? (
         <div className="contentGrid">
           {recipes.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} deleteAction={deleteRecipeAction} />
+            <RecipeCard
+              key={recipe.id}
+              recipe={recipe}
+              deleteAction={deleteRecipeAction}
+              duplicateAction={duplicateRecipeAction}
+            />
           ))}
         </div>
       ) : (
         <EmptyState
-          title="Todavía no hay recetas"
-          description="Crea tu primera receta base para empezar a planificar la semana y generar la compra automáticamente."
+          title="Todavia no hay recetas"
+          description="Crea tu primera receta base o ajusta los filtros para volver a ver el repositorio."
           action={<ButtonLink href="/recipes/new">Crear receta</ButtonLink>}
         />
       )}

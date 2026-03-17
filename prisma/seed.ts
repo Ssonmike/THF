@@ -107,6 +107,7 @@ const recipes: SeedRecipe[] = [
 ];
 
 async function main() {
+  await prisma.shoppingListItemState.deleteMany();
   await prisma.plannedMealPortion.deleteMany();
   await prisma.plannedMeal.deleteMany();
   await prisma.weeklyPlan.deleteMany();
