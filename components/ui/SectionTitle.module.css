@@ -1,0 +1,28 @@
+.wrapper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.74rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.title {
+  margin: 0.2rem 0 0;
+  font-size: clamp(1.35rem, 2.2vw, 1.9rem);
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.description {
+  margin: 0.5rem 0 0;
+  max-width: 54rem;
+  color: var(--color-muted-strong);
+}

@@ -1,0 +1,47 @@
+.card {
+  display: grid;
+  gap: 1rem;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.description {
+  margin: 0;
+  color: var(--color-muted-strong);
+}
+
+.ingredients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ingredient {
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(16, 24, 40, 0.05);
+  color: var(--color-muted-strong);
+  font-size: 0.85rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}

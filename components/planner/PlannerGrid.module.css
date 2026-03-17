@@ -1,0 +1,64 @@
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.dayCard {
+  display: grid;
+  gap: 1rem;
+}
+
+.dayHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.slots {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.slotCard {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(119, 126, 144, 0.14);
+}
+
+.slotHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.slotTitle {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.recipeName {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.placeholder {
+  color: var(--color-muted);
+}
+
+.portionList {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.portionRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}

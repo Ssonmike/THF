@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model Person {
+  id                       String              @id @default(cuid())
+  name                     String              @unique
+  defaultPortionMultiplier Float?
+  portions                 PlannedMealPortion[]
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+}
+
+model Recipe {
+  id                          String             @id @default(cuid())
+  name                        String
+  slug                        String             @unique
+  mealType                    MealType
+  description                 String?
+  instructions                String?
+  imageUrl                    String?
+  notes                       String?
+  nutritionCaloriesPerServing Float?
+  nutritionProteinPerServing  Float?
+  nutritionCarbsPerServing    Float?
+  nutritionFatsPerServing     Float?
+  isFavorite                  Boolean            @default(false)
+  ingredients                 RecipeIngredient[]
+  plannedMeals                PlannedMeal[]
+  createdAt                   DateTime           @default(now())
+  updatedAt                   DateTime           @updatedAt
+
+  @@index([mealType])
+  @@index([name])
+}
+
+model RecipeIngredient {
+  id        String   @id @default(cuid())
+  recipeId  String
+  itemName  String
+  quantity  Float
+  unit      String
+  notes     String?
+  sortOrder Int      @default(0)
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([recipeId, sortOrder])
+}
+
+model WeeklyPlan {
+  id            String       @id @default(cuid())
+  weekStartDate DateTime     @unique
+  notes         String?
+  plannedMeals  PlannedMeal[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model PlannedMeal {
+  id           String              @id @default(cuid())
+  weeklyPlanId String
+  recipeId     String
+  dayOfWeek    DayOfWeek
+  mealSlot     MealType
+  notes        String?
+  weeklyPlan   WeeklyPlan          @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  recipe       Recipe              @relation(fields: [recipeId], references: [id], onDelete: Restrict)
+  portions     PlannedMealPortion[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@unique([weeklyPlanId, dayOfWeek, mealSlot])
+  @@index([weeklyPlanId, dayOfWeek])
+  @@index([recipeId])
+}
+
+model PlannedMealPortion {
+  id            String      @id @default(cuid())
+  plannedMealId String
+  personId      String
+  servings      Float
+  plannedMeal   PlannedMeal @relation(fields: [plannedMealId], references: [id], onDelete: Cascade)
+  person        Person      @relation(fields: [personId], references: [id], onDelete: Restrict)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([plannedMealId, personId])
+  @@index([personId])
+}

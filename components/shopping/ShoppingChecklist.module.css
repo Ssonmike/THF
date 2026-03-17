@@ -1,0 +1,28 @@
+.list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.95rem 0;
+  border-bottom: 1px solid rgba(119, 126, 144, 0.14);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.checked {
+  opacity: 0.48;
+  text-decoration: line-through;
+}
