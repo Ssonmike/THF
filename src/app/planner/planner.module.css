@@ -1,80 +1,212 @@
+/* ─── Planner ─────────────────────────────────────────────────────────────── */
+
 .weekNav {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
 }
 
 .weekNavLabel {
+  flex: 1;
+  text-align: center;
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   color: var(--color-text);
-  flex: 1;
-  text-align: center;
 }
 
 @media (min-width: 640px) {
   .weekNavLabel { font-size: var(--text-base); }
 }
 
-/* ── Week grid — horizontal scroll on mobile, 7-col on desktop ── */
-.weekGrid {
+/* ── Duplicate bar ── */
+.duplicateBar {
   display: flex;
+  flex-direction: column;
   gap: var(--space-2);
-  /* Horizontal scroll on mobile */
-  overflow-x: auto;
-  /* Scroll snap so days snap cleanly */
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  /* Hide scrollbar visually on mobile */
-  scrollbar-width: none;
-  padding-bottom: var(--space-2);
-  margin: 0 calc(-1 * var(--space-4)); /* bleed to edge on mobile */
-  padding-left: var(--space-4);
-  padding-right: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  box-shadow: var(--shadow-sm);
 }
 
-.weekGrid::-webkit-scrollbar { display: none; }
+@media (min-width: 540px) {
+  .duplicateBar {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-5);
+    margin-bottom: var(--space-5);
+  }
+}
+
+.duplicateBarText {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.duplicateBarText strong {
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
+}
+
+.duplicateBarActions {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE PLANNER — day tabs + single column view
+   Hidden on desktop (≥640px)
+═══════════════════════════════════════════════════════════ */
+
+.mobilePlanner { display: block; }
+
+@media (min-width: 640px) {
+  .mobilePlanner { display: none; }
+}
+
+/* Day tabs row */
+.dayTabs {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  margin-bottom: var(--space-4);
+}
+
+.dayTab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-2) 2px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+
+.dayTab:hover { background: var(--color-border-light); }
+
+.dayTabSelected {
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.dayTabName {
+  font-size: 0.6rem;
+  font-weight: var(--weight-medium);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.dayTabDate {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  line-height: 1;
+}
+
+.dayTabToday .dayTabDate { color: var(--color-accent); }
+.dayTabToday .dayTabName { color: var(--color-accent); }
+
+.dayTabSelected .dayTabDate { color: var(--color-text); }
+
+/* Meal indicator dots */
+.dayTabDots {
+  display: flex;
+  gap: 2px;
+  position: absolute;
+  bottom: 4px;
+}
+
+.dayTabDot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  opacity: 0.6;
+}
+
+.dayTabSelected .dayTabDot { opacity: 1; }
+
+/* Mobile day view */
+.mobileDayHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.mobileDayName {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  text-transform: capitalize;
+}
+
+.mobileDayTodayBadge {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-accent);
+  background: var(--color-accent-light);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-full);
+}
+
+.mobileDaySlots {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DESKTOP PLANNER — full 7-column grid
+   Hidden on mobile (<640px)
+═══════════════════════════════════════════════════════════ */
+
+.weekGrid { display: none; }
 
 @media (min-width: 640px) {
   .weekGrid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: var(--space-3);
-    overflow-x: visible;
-    scroll-snap-type: none;
-    margin: 0;
-    padding-left: 0;
-    padding-right: 0;
   }
+}
+
+/* Tablet: 4 columns if grid doesn't fit */
+@media (min-width: 640px) and (max-width: 900px) {
+  .weekGrid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (min-width: 900px) {
+  .weekGrid { grid-template-columns: repeat(7, 1fr); }
 }
 
 .dayColumn {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  /* Mobile: each day takes ~85vw, shows edge of next */
-  flex: 0 0 82vw;
-  scroll-snap-align: start;
   min-width: 0;
-}
-
-@media (min-width: 400px) {
-  .dayColumn { flex: 0 0 74vw; }
-}
-
-@media (min-width: 640px) {
-  .dayColumn {
-    flex: unset;
-    gap: var(--space-3);
-  }
 }
 
 .dayHeader {
   padding: var(--space-2);
   text-align: center;
-  position: sticky;
-  /* Stays visible while scrolling slots */
 }
 
 .dayName {
@@ -96,7 +228,7 @@
 .dayHeaderToday .dayDate { color: var(--color-accent); }
 .dayHeaderToday .dayName { color: var(--color-accent); }
 
-/* ── Slot cards ── */
+/* ── Slot cards (shared between mobile + desktop) ── */
 .slotCard {
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
@@ -122,14 +254,13 @@
   justify-content: space-between;
 }
 
+/* Actions: always visible on touch; hover-only on pointer devices */
 .slotLabelActions {
   display: flex;
   gap: var(--space-1);
-  /* Always visible on touch; only hover-reveal on desktop */
   opacity: 1;
 }
 
-/* On pointer devices that support hover, hide until hover */
 @media (hover: hover) {
   .slotLabelActions { opacity: 0; transition: opacity var(--transition-fast); }
   .slotCard:hover .slotLabelActions { opacity: 1; }
@@ -141,7 +272,6 @@
   cursor: pointer;
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
-  /* Touch-friendly */
   width: 28px;
   height: 28px;
   display: flex;
@@ -191,7 +321,6 @@
   cursor: pointer;
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
-  /* Touch-friendly target */
   min-height: var(--touch-min);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
@@ -201,50 +330,10 @@
   touch-action: manipulation;
 }
 
-.slotAddBtn:hover, .slotAddBtn:active {
+.slotAddBtn:hover,
+.slotAddBtn:active {
   color: var(--color-text);
   background: var(--color-surface-raised);
-}
-
-/* ── Duplicate bar ── */
-.duplicateBar {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--space-5);
-  box-shadow: var(--shadow-sm);
-}
-
-@media (min-width: 540px) {
-  .duplicateBar {
-    flex-direction: row;
-    align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-4) var(--space-5);
-    margin-bottom: var(--space-6);
-  }
-}
-
-.duplicateBarText {
-  flex: 1;
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.duplicateBarText strong {
-  color: var(--color-text);
-  font-weight: var(--weight-medium);
-}
-
-.duplicateBarActions {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-  flex-wrap: wrap;
 }
 
 /* ── Modal — bottom sheet on mobile, centered on desktop ── */
@@ -256,7 +345,6 @@
   -webkit-backdrop-filter: blur(3px);
   z-index: 200;
   display: flex;
-  /* Mobile: align to bottom */
   align-items: flex-end;
   justify-content: center;
   padding: 0;
@@ -273,15 +361,12 @@
   background: var(--color-surface);
   width: 100%;
   max-width: 540px;
-  /* Mobile: full-width bottom sheet */
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   padding: var(--space-6) var(--space-5);
-  /* Account for safe area (home bar) */
   padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom));
   max-height: 92dvh;
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
-  /* Smooth slide-up feel */
   animation: slideUp 220ms ease;
 }
 
@@ -299,7 +384,7 @@
   to   { transform: translateY(0);    opacity: 1; }
 }
 
-/* Drag handle hint on mobile */
+/* Drag handle on mobile */
 .modal::before {
   content: "";
   display: block;
@@ -322,10 +407,6 @@
   margin-bottom: var(--space-5);
 }
 
-@media (min-width: 600px) {
-  .modalTitle { font-size: var(--text-lg); margin-bottom: var(--space-6); }
-}
-
 .modalActions {
   display: flex;
   gap: var(--space-3);
@@ -334,7 +415,6 @@
   border-top: 1px solid var(--color-border-light);
 }
 
-/* Full-width buttons on mobile modal */
 .modalActions .btn { flex: 1; }
 
 @media (min-width: 600px) {

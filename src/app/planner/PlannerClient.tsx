@@ -42,10 +42,18 @@ interface ModalState {
   meal?: PlannedMealData;
 }
 
+// Day abbreviations (Mon–Sun)
+const DAY_SHORT = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+
 export default function PlannerClient({ plan, weekStartStr, recipes, persons }: Props) {
   const router = useRouter();
   const today = getTodayUTC();
   const weekDays = getWeekDays(new Date(weekStartStr + "T00:00:00Z"));
+
+  // Default to today's index if it's in this week, else Monday (0)
+  const todayStr = toDateString(today);
+  const todayIdx = weekDays.findIndex((d) => toDateString(d) === todayStr);
+  const [selectedDayIdx, setSelectedDayIdx] = useState(todayIdx >= 0 ? todayIdx : 0);
 
   const [modal, setModal] = useState<ModalState | null>(null);
   const [duplicating, setDuplicating] = useState(false);
@@ -82,6 +90,70 @@ export default function PlannerClient({ plan, weekStartStr, recipes, persons }: 
       setDupError(result.error ?? "Error al duplicar");
     }
     setDuplicating(false);
+  }
+
+  /** Renders the 4 slot cards for a single day */
+  function renderDaySlots(day: Date) {
+    const dateStr = toDateString(day);
+    return SLOT_ORDER.map((slot) => {
+      const meal = getMealForSlot(day, slot);
+      return (
+        <div
+          key={slot}
+          className={`${styles.slotCard} ${meal ? styles.slotCardFilled : ""}`}
+        >
+          <div className={styles.slotLabel}>
+            <span>{SLOT_LABELS[slot]}</span>
+            {meal && (
+              <span className={styles.slotLabelActions}>
+                <button
+                  className={styles.slotActionBtn}
+                  onClick={() => setModal({ mode: "edit", date: dateStr, slot, meal })}
+                  title="Editar"
+                >
+                  ✎
+                </button>
+                <button
+                  className={`${styles.slotActionBtn} ${styles.slotActionBtnDelete}`}
+                  onClick={() => handleDelete(meal.id)}
+                  title="Eliminar"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+          </div>
+
+          {meal ? (
+            <>
+              <p className={styles.slotRecipeName}>{meal.recipeName}</p>
+              <div className={styles.slotPortions}>
+                {meal.portions.map((p) => (
+                  <div key={p.personId} className={styles.slotPortion}>
+                    <span>{p.personName}</span>
+                    <span>{p.servings}×</span>
+                  </div>
+                ))}
+                {meal.portions.length === 0 && (
+                  <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-tertiary)" }}>
+                    Sin porciones
+                  </span>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className={styles.slotEmpty}>
+              <button
+                className={styles.slotAddBtn}
+                onClick={() => setModal({ mode: "add", date: dateStr, slot })}
+              >
+                + Añadir
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    });
   }
 
   return (
@@ -127,81 +199,65 @@ export default function PlannerClient({ plan, weekStartStr, recipes, persons }: 
         </div>
       </div>
 
-      {/* Week grid */}
+      {/* ── Mobile view: day tabs + single column ── */}
+      <div className={styles.mobilePlanner}>
+        {/* Day tabs */}
+        <div className={styles.dayTabs}>
+          {weekDays.map((day, idx) => {
+            const isToday = isSameDay(day, today);
+            const isSelected = idx === selectedDayIdx;
+            const mealsCount = SLOT_ORDER.filter(
+              (slot) => getMealForSlot(day, slot) !== undefined
+            ).length;
+
+            return (
+              <button
+                key={idx}
+                className={`${styles.dayTab} ${isSelected ? styles.dayTabSelected : ""} ${isToday ? styles.dayTabToday : ""}`}
+                onClick={() => setSelectedDayIdx(idx)}
+              >
+                <span className={styles.dayTabName}>{DAY_SHORT[idx]}</span>
+                <span className={styles.dayTabDate}>{day.getUTCDate()}</span>
+                {mealsCount > 0 && (
+                  <span className={styles.dayTabDots}>
+                    {Array.from({ length: mealsCount }).map((_, i) => (
+                      <span key={i} className={styles.dayTabDot} />
+                    ))}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Selected day slots */}
+        <div className={styles.mobileDayView}>
+          <div className={styles.mobileDayHeader}>
+            <span className={styles.mobileDayName}>
+              {formatDayShort(weekDays[selectedDayIdx])}
+            </span>
+            {isSameDay(weekDays[selectedDayIdx], today) && (
+              <span className={styles.mobileDayTodayBadge}>Hoy</span>
+            )}
+          </div>
+          <div className={styles.mobileDaySlots}>
+            {renderDaySlots(weekDays[selectedDayIdx])}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Desktop view: full 7-column grid ── */}
       <div className={styles.weekGrid}>
-        {weekDays.map((day) => {
+        {weekDays.map((day, idx) => {
           const isToday = isSameDay(day, today);
           const dateStr = toDateString(day);
-
           return (
             <div key={dateStr} className={styles.dayColumn}>
               <div className={`${styles.dayHeader} ${isToday ? styles.dayHeaderToday : ""}`}>
-                <p className={styles.dayName}>{formatDayShort(day).split(" ")[0]}</p>
+                <p className={styles.dayName}>{DAY_SHORT[idx]}</p>
                 <p className={styles.dayDate}>{day.getUTCDate()}</p>
               </div>
-
-              {SLOT_ORDER.map((slot) => {
-                const meal = getMealForSlot(day, slot);
-
-                return (
-                  <div
-                    key={slot}
-                    className={`${styles.slotCard} ${meal ? styles.slotCardFilled : ""}`}
-                  >
-                    <div className={styles.slotLabel}>
-                      <span>{SLOT_LABELS[slot]}</span>
-                      {meal && (
-                        <span className={styles.slotLabelActions}>
-                          <button
-                            className={styles.slotActionBtn}
-                            onClick={() =>
-                              setModal({ mode: "edit", date: dateStr, slot, meal })
-                            }
-                            title="Editar"
-                          >
-                            ✎
-                          </button>
-                          <button
-                            className={`${styles.slotActionBtn} ${styles.slotActionBtnDelete}`}
-                            onClick={() => handleDelete(meal.id)}
-                            title="Eliminar"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      )}
-                    </div>
-
-                    {meal ? (
-                      <>
-                        <p className={styles.slotRecipeName}>{meal.recipeName}</p>
-                        <div className={styles.slotPortions}>
-                          {meal.portions.map((p) => (
-                            <div key={p.personId} className={styles.slotPortion}>
-                              <span>{p.personName}</span>
-                              <span>{p.servings}×</span>
-                            </div>
-                          ))}
-                          {meal.portions.length === 0 && (
-                            <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-tertiary)" }}>
-                              Sin porciones
-                            </span>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <div className={styles.slotEmpty}>
-                        <button
-                          className={styles.slotAddBtn}
-                          onClick={() => setModal({ mode: "add", date: dateStr, slot })}
-                        >
-                          + Añadir
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {renderDaySlots(day)}
             </div>
           );
         })}
@@ -283,7 +339,7 @@ function MealModal({ modal, weeklyPlanId, recipes, persons, onClose, onSaved }: 
         <h2 className={styles.modalTitle} id="modal-title">
           {modal.mode === "add" ? "Añadir comida" : "Editar comida"}{" "}
           <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-tertiary)", fontWeight: "var(--weight-normal)" }}>
-            {SLOT_LABELS[modal.slot]} · {modal.date}
+            {SLOT_LABELS[modal.slot]}
           </span>
         </h2>
 
