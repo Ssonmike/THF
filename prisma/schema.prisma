@@ -1,0 +1,133 @@
+// TheHomeFood — Prisma Schema
+// SQLite database for local/self-hosted use
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+// SQLite doesn't support native enums; we store as String and validate in app layer
+
+// MealType: category of a recipe (used for filtering)
+// Values: BREAKFAST | LUNCH | DINNER | SNACK
+
+// MealSlot: slot in the weekly plan for a specific day
+// Values: BREAKFAST | LUNCH | DINNER | SNACK
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model Person {
+  id       String               @id @default(cuid())
+  name     String               @unique
+  slug     String               @unique // e.g. "miguel", "ana"
+  portions PlannedMealPortion[]
+
+  @@map("persons")
+}
+
+model Recipe {
+  id           String             @id @default(cuid())
+  name         String
+  description  String?
+  mealType     String             // BREAKFAST | LUNCH | DINNER | SNACK
+  prepTime     Int?               // minutes
+  cookTime     Int?               // minutes
+  instructions String?
+  isFavorite   Boolean            @default(false)
+  // Nutritional info per 1 standard serving (optional but useful)
+  caloriesPerServing Float?
+  proteinPerServing  Float?
+  carbsPerServing    Float?
+  fatPerServing      Float?
+  ingredients  RecipeIngredient[]
+  plannedMeals PlannedMeal[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([mealType])
+  @@index([isFavorite])
+  @@map("recipes")
+}
+
+model RecipeIngredient {
+  id       String  @id @default(cuid())
+  recipe   Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId String
+  name     String  // normalized lowercase, trimmed at save time
+  quantity Float
+  unit     String  // g | kg | ml | l | tsp | tbsp | cup | unit | pinch | to taste
+  // Nutritional info per ingredient per 1 serving (optional)
+  calories Float?
+  protein  Float?
+  carbs    Float?
+  fat      Float?
+
+  @@index([recipeId])
+  @@map("recipe_ingredients")
+}
+
+model WeeklyPlan {
+  id            String                  @id @default(cuid())
+  weekStartDate DateTime                // ISO date of Monday 00:00:00 UTC
+  meals         PlannedMeal[]
+  shoppingItems ShoppingListItemState[]
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  @@unique([weekStartDate])
+  @@index([weekStartDate])
+  @@map("weekly_plans")
+}
+
+model PlannedMeal {
+  id           String               @id @default(cuid())
+  weeklyPlan   WeeklyPlan           @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  weeklyPlanId String
+  recipe       Recipe               @relation(fields: [recipeId], references: [id])
+  recipeId     String
+  date         DateTime             // specific day (YYYY-MM-DD as UTC midnight)
+  slot         String               // BREAKFAST | LUNCH | DINNER | SNACK
+  notes        String?              // optional per-meal notes
+  portions     PlannedMealPortion[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  // A slot on a specific day within a plan is unique
+  @@unique([weeklyPlanId, date, slot])
+  @@index([weeklyPlanId])
+  @@index([date])
+  @@map("planned_meals")
+}
+
+model PlannedMealPortion {
+  id            String      @id @default(cuid())
+  plannedMeal   PlannedMeal @relation(fields: [plannedMealId], references: [id], onDelete: Cascade)
+  plannedMealId String
+  person        Person      @relation(fields: [personId], references: [id])
+  personId      String
+  servings      Float       // how many servings this person takes
+
+  @@unique([plannedMealId, personId])
+  @@index([plannedMealId])
+  @@map("planned_meal_portions")
+}
+
+model ShoppingListItemState {
+  id            String     @id @default(cuid())
+  weeklyPlan    WeeklyPlan @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  weeklyPlanId  String
+  // Composite key: normalized ingredient name (lowercase, trimmed)
+  ingredientKey String
+  checked       Boolean    @default(false)
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([weeklyPlanId, ingredientKey])
+  @@index([weeklyPlanId])
+  @@map("shopping_list_item_states")
+}
