@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { PlannedMealSchema } from "@/lib/validations";
-import { toUTCMidnight, toDateString, nextWeek } from "@/lib/dates";
+import { toUTCMidnight, nextWeek } from "@/lib/dates";
 import type { ActionResult, WeeklyPlanData } from "@/types";
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
