@@ -1,0 +1,327 @@
+/* ─── Recipe Detail — Cookidoo style ─────────────────────────────────────── */
+
+/* ── Back + actions bar ── */
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.topBarActions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* ── Hero header ── */
+.hero {
+  margin-bottom: var(--space-6);
+}
+
+@media (min-width: 640px) {
+  .hero { margin-bottom: var(--space-8); }
+}
+
+.heroTitle {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.03em;
+  color: var(--color-text);
+  line-height: 1.1;
+  margin-bottom: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .heroTitle { font-size: var(--text-3xl); }
+}
+
+.heroDesc {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+  max-width: 640px;
+}
+
+/* ── Timing + meta chips ── */
+.metaChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.metaChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-medium);
+}
+
+.metaChipIcon { font-size: 0.9rem; opacity: 0.6; }
+.metaChipLabel { font-size: var(--text-xs); color: var(--color-text-tertiary); }
+
+/* ── Nutrition bar ── */
+.nutritionBar {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+}
+
+@media (min-width: 480px) {
+  .nutritionBar { grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+}
+
+@media (min-width: 640px) {
+  .nutritionBar { margin-bottom: var(--space-8); }
+}
+
+.nutritionBarItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-3) 0;
+}
+
+.nutritionBarValue {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.nutritionBarUnit {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Highlight calories */
+.nutritionBarItemCal .nutritionBarValue { color: var(--color-accent); }
+
+/* ── Two-column content layout ── */
+.contentLayout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .contentLayout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: var(--space-8);
+    align-items: start;
+  }
+}
+
+/* ── Ingredients panel ── */
+.ingredientsPanel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  /* Sticky on desktop */
+}
+
+@media (min-width: 768px) {
+  .ingredientsPanel {
+    position: sticky;
+    top: calc(var(--nav-height) + var(--space-4));
+  }
+}
+
+.ingredientsPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-surface-raised);
+}
+
+.panelTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--text-xs);
+}
+
+.checkAllBtn {
+  font-size: var(--text-xs);
+  color: var(--color-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: var(--weight-medium);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+  touch-action: manipulation;
+}
+.checkAllBtn:hover { background: var(--color-accent-light); }
+
+.ingredientsList {
+  list-style: none;
+  padding: var(--space-2) 0;
+}
+
+.ingredientItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  min-height: var(--touch-min);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ingredientItem:hover { background: var(--color-bg); }
+.ingredientItem:active { background: var(--color-surface-raised); }
+
+.ingredientItemChecked { opacity: 0.4; }
+.ingredientItemChecked .ingredientItemName { text-decoration: line-through; }
+
+.ingredientCheck {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: var(--weight-semibold);
+  color: transparent;
+  transition: all var(--transition-fast);
+  background: var(--color-surface);
+}
+
+.ingredientCheckDone {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: white;
+}
+
+.ingredientItemName {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
+  text-transform: capitalize;
+}
+
+.ingredientItemQty {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* ── Instructions panel ── */
+.instructionsPanel { flex: 1; }
+
+.instructionsPanelTitle {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-4);
+}
+
+.stepsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.stepCard {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.stepNumber {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-text);
+  color: var(--color-text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
+  /* Align with first line of text */
+  margin-top: 2px;
+}
+
+@media (min-width: 640px) {
+  .stepNumber { width: 40px; height: 40px; font-size: var(--text-base); }
+  .stepCard { gap: var(--space-5); }
+}
+
+.stepBody {
+  flex: 1;
+  padding-top: var(--space-2);
+}
+
+.stepText {
+  font-size: var(--text-base);
+  color: var(--color-text);
+  line-height: var(--leading-relaxed);
+}
+
+/* Connector line between steps */
+.stepConnector {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  position: relative;
+}
+
+.stepsListConnected {
+  display: flex;
+  flex-direction: column;
+}
+
+.stepsListConnected .stepCard:not(:last-child)::before {
+  content: "";
+  display: none; /* simplified — use gap instead */
+}
+
+/* ── Divider between major sections ── */
+.sectionDivider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: var(--space-6) 0;
+}
+
+@media (min-width: 640px) {
+  .sectionDivider { margin: var(--space-8) 0; }
+}

@@ -57,7 +57,7 @@ export default async function DashboardPage() {
               const hasNutrition = recipe.caloriesPerServing !== null;
 
               return (
-                <div key={meal.id} className={styles.mealCard}>
+                <Link key={meal.id} href={`/recipes/${recipe.id}`} className={styles.mealCard}>
                   <p className={styles.mealSlot}>
                     {SLOT_LABELS[meal.slot] ?? meal.slot}
                   </p>
@@ -109,7 +109,7 @@ export default async function DashboardPage() {
                       )}
                     </div>
                   )}
-                </div>
+                </Link>
               );
             })}
           </div>
