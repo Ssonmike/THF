@@ -69,12 +69,12 @@ export type RecipeInput = z.infer<typeof RecipeSchema>;
 // ─── Planned Meal ─────────────────────────────────────────────────────────────
 
 export const PortionSchema = z.object({
-  personId: z.string().cuid("ID de persona inválido"),
+  personId: z.string().min(1, "ID de persona requerido"),
   servings: positiveFloat("Porciones").max(20, "Demasiadas porciones"),
 });
 
 export const PlannedMealSchema = z.object({
-  recipeId: z.string().cuid("ID de receta inválido"),
+  recipeId: z.string().min(1, "Selecciona una receta"),
   date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida (YYYY-MM-DD)"),
@@ -93,7 +93,7 @@ export type PlannedMealInput = z.infer<typeof PlannedMealSchema>;
 // ─── Shopping checklist ───────────────────────────────────────────────────────
 
 export const ChecklistUpdateSchema = z.object({
-  weeklyPlanId: z.string().cuid("ID de plan inválido"),
+  weeklyPlanId: z.string().min(1, "ID de plan requerido"),
   ingredientKey: z.string().min(1).max(500),
   checked: z.boolean(),
 });

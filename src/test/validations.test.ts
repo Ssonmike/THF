@@ -94,7 +94,9 @@ describe("RecipeSchema", () => {
 });
 
 describe("PlannedMealSchema", () => {
-  const cuid = "cjld2cjxh0000qzrmn831i7rn"; // valid cuid
+  // IDs can be any non-empty string (cuid, slug, or custom seed ID)
+  const cuid = "cjld2cjxh0000qzrmn831i7rn";
+  const slugId = "recipe-tortilla"; // seed-style IDs must also be accepted
 
   const validMeal = {
     recipeId: cuid,
@@ -105,6 +107,11 @@ describe("PlannedMealSchema", () => {
 
   it("accepts a valid planned meal", () => {
     expect(() => PlannedMealSchema.parse(validMeal)).not.toThrow();
+  });
+
+  it("accepts seed-style slug IDs (non-cuid)", () => {
+    const result = PlannedMealSchema.safeParse({ ...validMeal, recipeId: slugId });
+    expect(result.success).toBe(true);
   });
 
   it("rejects invalid date format", () => {
