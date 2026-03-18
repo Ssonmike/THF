@@ -107,22 +107,24 @@ export default function PlannerClient({ plan, weekStartStr, recipes, persons }: 
               <strong>{plan.meals.length}</strong> comidas esta semana
             </>
           ) : (
-            "Semana vacía"
+            "Semana vacía — añade comidas en el grid"
           )}
         </p>
-        {dupError && (
-          <span style={{ fontSize: "var(--text-xs)", color: "var(--color-error)" }}>
-            {dupError}
-          </span>
-        )}
-        <button
-          className="btn btn-secondary btn-sm"
-          onClick={handleDuplicate}
-          disabled={duplicating || plan.meals.length === 0}
-          title="Copiar esta semana a la siguiente"
-        >
-          {duplicating ? "Duplicando…" : "Duplicar semana →"}
-        </button>
+        <div className={styles.duplicateBarActions}>
+          {dupError && (
+            <span style={{ fontSize: "var(--text-xs)", color: "var(--color-error)" }}>
+              {dupError}
+            </span>
+          )}
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={handleDuplicate}
+            disabled={duplicating || plan.meals.length === 0}
+            title="Copiar esta semana a la siguiente"
+          >
+            {duplicating ? "Duplicando…" : "Duplicar →"}
+          </button>
+        </div>
       </div>
 
       {/* Week grid */}

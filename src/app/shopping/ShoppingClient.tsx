@@ -109,7 +109,7 @@ export default function ShoppingClient({ items, weeklyPlanId }: Props) {
           ))}
         </div>
 
-        <div style={{ display: "flex", gap: "var(--space-2)", marginLeft: "auto" }}>
+        <div className={styles.toolbarActions}>
           <button
             className="btn btn-ghost btn-sm"
             onClick={handleCopy}
@@ -124,7 +124,7 @@ export default function ShoppingClient({ items, weeklyPlanId }: Props) {
               title="Desmarcar todos los comprados"
               style={{ color: "var(--color-text-tertiary)" }}
             >
-              Desmarcar todo
+              Desmarcar
             </button>
           )}
         </div>
