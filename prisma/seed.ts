@@ -24,12 +24,54 @@ async function main() {
   type RecipeCreate = Parameters<typeof prisma.recipe.upsert>[0]["create"];
 
   async function upsertRecipe(id: string, data: Omit<RecipeCreate, "id">) {
+    const ingredientsCreate = Array.isArray(data.ingredients?.create)
+      ? data.ingredients.create
+      : [];
+
     return prisma.recipe.upsert({
       where: { id },
-      update: {},
+      update: {
+        ...data,
+        ingredients: {
+          deleteMany: {},
+          create: ingredientsCreate,
+        },
+      },
       create: { id, ...data },
     });
   }
+
+  await prisma.plannedMeal.deleteMany({
+    where: {
+      recipeId: {
+        in: [
+          "recipe-tostadas-salmon",
+          "recipe-salmon-esparragos",
+          "recipe-merluza-horno",
+          "recipe-ensalada-quinoa-atun",
+          "recipe-salmon-brocoli",
+          "recipe-gambas-esparragos",
+          "recipe-atun-tomate",
+        ],
+      },
+    },
+  });
+
+  await prisma.recipe.deleteMany({
+    where: {
+      id: {
+        in: [
+          "recipe-tostadas-salmon",
+          "recipe-salmon-esparragos",
+          "recipe-merluza-horno",
+          "recipe-ensalada-quinoa-atun",
+          "recipe-salmon-brocoli",
+          "recipe-gambas-esparragos",
+          "recipe-atun-tomate",
+        ],
+      },
+    },
+  });
 
   // ═══════════════════════════════════════════════════════════════════════════
   // DESAYUNO — alto en proteína, saciante, fácil de preparar
@@ -151,26 +193,99 @@ async function main() {
     },
   });
 
-  await upsertRecipe("recipe-tostadas-salmon", {
-    name: "Tostadas con salmón ahumado y queso crema",
-    description: "Proteína + omega-3 desde el primer momento del día. Rápido y elegante.",
+  await upsertRecipe("recipe-overnight-oats-manzana", {
+    name: "Overnight oats de manzana y canela",
+    description: "Desayuno frío que se deja listo la noche anterior. Cremoso, saciante y muy práctico.",
     mealType: "BREAKFAST",
     prepTime: 5,
-    cookTime: 2,
+    cookTime: 0,
     instructions:
-      "1. Tuesta el pan integral.\n2. Extiende el queso crema sobre las tostadas.\n3. Coloca el salmón ahumado por encima.\n4. Añade unas alcaparras, eneldo y unas gotas de limón.",
-    caloriesPerServing: 330,
-    proteinPerServing: 24,
-    carbsPerServing: 26,
+      "1. Mezcla en un tarro la avena, el yogur, la leche y la canela.\n2. Añade la manzana en dados y las semillas.\n3. Deja reposar en la nevera toda la noche.\n4. Por la mañana remueve y sirve con nueces por encima.",
+    caloriesPerServing: 340,
+    proteinPerServing: 18,
+    carbsPerServing: 42,
+    fatPerServing: 10,
+    ingredients: {
+      create: [
+        { name: "copos de avena", quantity: 55, unit: "g" },
+        { name: "yogur griego 0%", quantity: 150, unit: "g" },
+        { name: "leche semidesnatada", quantity: 120, unit: "ml" },
+        { name: "manzana", quantity: 0.5, unit: "unit" },
+        { name: "canela", quantity: 0.5, unit: "tsp" },
+        { name: "semillas de lino", quantity: 8, unit: "g" },
+        { name: "nueces", quantity: 15, unit: "g" },
+      ],
+    },
+  });
+
+  await upsertRecipe("recipe-tortitas-avena", {
+    name: "Tortitas de avena y yogur",
+    description: "Tortitas tiernas y rápidas con buena cantidad de proteína para empezar el día fuerte.",
+    mealType: "BREAKFAST",
+    prepTime: 8,
+    cookTime: 10,
+    instructions:
+      "1. Tritura la avena con el huevo, el yogur, el plátano y la canela.\n2. Cocina pequeñas porciones en una sartén antiadherente 2-3 min por cada lado.\n3. Sirve con frutos rojos por encima.",
+    caloriesPerServing: 365,
+    proteinPerServing: 20,
+    carbsPerServing: 46,
+    fatPerServing: 10,
+    ingredients: {
+      create: [
+        { name: "copos de avena", quantity: 60, unit: "g" },
+        { name: "huevos", quantity: 2, unit: "unit" },
+        { name: "yogur griego 0%", quantity: 100, unit: "g" },
+        { name: "plátano", quantity: 1, unit: "unit" },
+        { name: "canela", quantity: 0.5, unit: "tsp" },
+        { name: "frutos rojos", quantity: 60, unit: "g" },
+      ],
+    },
+  });
+
+  await upsertRecipe("recipe-pudding-chia", {
+    name: "Pudding de chía con mango",
+    description: "Desayuno fresco, rico en fibra y perfecto para preparar con antelación.",
+    mealType: "BREAKFAST",
+    prepTime: 5,
+    cookTime: 0,
+    instructions:
+      "1. Mezcla la leche con el yogur, las semillas de chía y la vainilla.\n2. Reposa en la nevera al menos 4 horas.\n3. Sirve con el mango en dados y almendras laminadas.",
+    caloriesPerServing: 310,
+    proteinPerServing: 17,
+    carbsPerServing: 28,
+    fatPerServing: 13,
+    ingredients: {
+      create: [
+        { name: "semillas de chía", quantity: 30, unit: "g" },
+        { name: "leche semidesnatada", quantity: 180, unit: "ml" },
+        { name: "yogur griego 0%", quantity: 120, unit: "g" },
+        { name: "mango", quantity: 100, unit: "g" },
+        { name: "extracto de vainilla", quantity: 0.5, unit: "tsp" },
+        { name: "almendras laminadas", quantity: 10, unit: "g" },
+      ],
+    },
+  });
+
+  await upsertRecipe("recipe-burrito-desayuno", {
+    name: "Wrap de desayuno con huevo y pavo",
+    description: "Opción salada muy completa con proteína, verduras y carbohidratos moderados.",
+    mealType: "BREAKFAST",
+    prepTime: 5,
+    cookTime: 7,
+    instructions:
+      "1. Haz un revuelto con los huevos y las espinacas.\n2. Calienta la tortilla integral y rellénala con el revuelto, el pavo y el queso.\n3. Cierra el wrap y dóralo 1 min por cada lado.",
+    caloriesPerServing: 345,
+    proteinPerServing: 27,
+    carbsPerServing: 24,
     fatPerServing: 14,
     ingredients: {
       create: [
-        { name: "pan integral", quantity: 2, unit: "unit" },
-        { name: "salmón ahumado", quantity: 60, unit: "g" },
-        { name: "queso crema light", quantity: 40, unit: "g" },
-        { name: "alcaparras", quantity: 10, unit: "g" },
-        { name: "limón", quantity: 0.25, unit: "unit" },
-        { name: "eneldo fresco", quantity: 1, unit: "tsp" },
+        { name: "tortilla integral", quantity: 1, unit: "unit" },
+        { name: "huevos", quantity: 2, unit: "unit" },
+        { name: "fiambre de pavo", quantity: 60, unit: "g" },
+        { name: "espinacas frescas", quantity: 40, unit: "g" },
+        { name: "queso rallado light", quantity: 20, unit: "g" },
+        { name: "aceite de oliva", quantity: 5, unit: "ml" },
       ],
     },
   });
@@ -253,28 +368,30 @@ async function main() {
     },
   });
 
-  await upsertRecipe("recipe-salmon-esparragos", {
-    name: "Salmón al horno con espárragos",
-    description: "Omega-3, proteína completa y verduras en un solo plato. Listo en 20 minutos.",
+  await upsertRecipe("recipe-pollo-mostaza-patata", {
+    name: "Pollo a la mostaza con patatas asadas",
+    description: "Plato completo y sabroso con pollo jugoso y patatas doradas al horno.",
     mealType: "LUNCH",
-    prepTime: 5,
-    cookTime: 18,
+    prepTime: 10,
+    cookTime: 30,
     instructions:
-      "1. Precalienta el horno a 200°C.\n2. Coloca el salmón en una bandeja. Alíñalo con aceite, limón, sal, pimienta y eneldo.\n3. Rodea el salmón con los espárragos aliñados con aceite y sal.\n4. Hornea 15-18 min. El salmón está listo cuando se separa en lascas fácilmente.",
-    caloriesPerServing: 390,
-    proteinPerServing: 38,
-    carbsPerServing: 6,
-    fatPerServing: 22,
+      "1. Mezcla la mostaza con yogur, ajo y especias.\n2. Unta el pollo con la mezcla y colócalo en una bandeja.\n3. Añade las patatas y la zanahoria con aceite, sal y pimienta.\n4. Hornea 30 min a 200°C hasta que todo esté dorado.",
+    caloriesPerServing: 430,
+    proteinPerServing: 39,
+    carbsPerServing: 32,
+    fatPerServing: 14,
     isFavorite: true,
     ingredients: {
       create: [
-        { name: "lomo de salmón", quantity: 180, unit: "g" },
-        { name: "espárragos trigueros", quantity: 200, unit: "g" },
+        { name: "pechuga de pollo", quantity: 200, unit: "g" },
+        { name: "patatas", quantity: 180, unit: "g" },
+        { name: "zanahoria", quantity: 100, unit: "g" },
+        { name: "yogur griego 0%", quantity: 50, unit: "g" },
+        { name: "mostaza dijon", quantity: 15, unit: "g" },
+        { name: "ajo en polvo", quantity: 1, unit: "tsp" },
         { name: "aceite de oliva", quantity: 15, unit: "ml" },
-        { name: "limón", quantity: 0.5, unit: "unit" },
         { name: "sal", quantity: 1, unit: "tsp" },
         { name: "pimienta negra", quantity: 0.5, unit: "tsp" },
-        { name: "eneldo seco", quantity: 1, unit: "tsp" },
       ],
     },
   });
@@ -359,55 +476,110 @@ async function main() {
     },
   });
 
-  await upsertRecipe("recipe-merluza-horno", {
-    name: "Merluza al horno con patatas y pimientos",
-    description: "Pescado blanco muy magro con patatas. Clásico español, ligero y nutritivo.",
+  await upsertRecipe("recipe-albondigas-pavo-arroz", {
+    name: "Albóndigas de pavo con arroz y tomate",
+    description: "Una comida muy completa y casera con salsa ligera de tomate.",
     mealType: "LUNCH",
-    prepTime: 10,
+    prepTime: 15,
     cookTime: 30,
     instructions:
-      "1. Precalienta el horno a 190°C.\n2. Coloca las patatas en rodajas en la base de la bandeja con aceite y sal. Hornea 15 min.\n3. Añade el pimiento en tiras y los lomos de merluza encima. Sazona con sal, ajo y perejil.\n4. Hornea 15 min más. Riega con un chorrito de vino blanco a mitad de cocción.",
-    caloriesPerServing: 360,
-    proteinPerServing: 34,
-    carbsPerServing: 30,
-    fatPerServing: 9,
+      "1. Mezcla el pavo picado con ajo, huevo y especias. Forma albóndigas.\n2. Hornea 15 min a 200°C.\n3. Cocina la cebolla con tomate triturado y albahaca hasta formar una salsa.\n4. Añade las albóndigas a la salsa y sirve con arroz cocido.",
+    caloriesPerServing: 465,
+    proteinPerServing: 37,
+    carbsPerServing: 42,
+    fatPerServing: 14,
     ingredients: {
       create: [
-        { name: "lomo de merluza", quantity: 200, unit: "g" },
-        { name: "patatas", quantity: 150, unit: "g" },
-        { name: "pimiento rojo", quantity: 80, unit: "g" },
-        { name: "aceite de oliva", quantity: 20, unit: "ml" },
-        { name: "ajo en polvo", quantity: 1, unit: "tsp" },
-        { name: "perejil fresco", quantity: 1, unit: "tbsp" },
-        { name: "vino blanco", quantity: 30, unit: "ml" },
+        { name: "pechuga de pavo picada", quantity: 180, unit: "g" },
+        { name: "arroz integral", quantity: 75, unit: "g" },
+        { name: "tomate triturado", quantity: 180, unit: "g" },
+        { name: "cebolla", quantity: 60, unit: "g" },
+        { name: "huevos", quantity: 1, unit: "unit" },
+        { name: "ajo", quantity: 2, unit: "unit" },
+        { name: "albahaca fresca", quantity: 5, unit: "g" },
+        { name: "aceite de oliva", quantity: 15, unit: "ml" },
         { name: "sal", quantity: 1, unit: "tsp" },
       ],
     },
   });
 
-  await upsertRecipe("recipe-ensalada-quinoa-atun", {
-    name: "Ensalada de quinoa, atún y aguacate",
-    description: "Proteína completa, grasas buenas y fibra. Fresquísima y lista en 15 minutos.",
+  await upsertRecipe("recipe-quinoa-pollo-aguacate", {
+    name: "Ensalada templada de quinoa, pollo y aguacate",
+    description: "Muy fresca y equilibrada, perfecta para comer bien incluso con poco tiempo.",
     mealType: "LUNCH",
     prepTime: 10,
     cookTime: 12,
     instructions:
-      "1. Cuece la quinoa en el doble de agua con sal durante 12 min. Deja enfriar.\n2. Mezcla la quinoa con el atún escurrido, el aguacate en dados y el pepino.\n3. Aliña con aceite, limón, sal y cilantro o perejil.",
-    caloriesPerServing: 380,
-    proteinPerServing: 28,
-    carbsPerServing: 30,
+      "1. Cuece la quinoa y deja templar.\n2. Cocina el pollo a la plancha con sal y limón y córtalo en tiras.\n3. Mezcla con aguacate, pepino, tomate cherry y perejil.\n4. Aliña con aceite de oliva y limón.",
+    caloriesPerServing: 420,
+    proteinPerServing: 34,
+    carbsPerServing: 31,
     fatPerServing: 16,
     isFavorite: true,
     ingredients: {
       create: [
         { name: "quinoa", quantity: 70, unit: "g" },
-        { name: "atún en agua", quantity: 120, unit: "g" },
+        { name: "pechuga de pollo", quantity: 150, unit: "g" },
         { name: "aguacate", quantity: 70, unit: "g" },
         { name: "pepino", quantity: 80, unit: "g" },
         { name: "tomate cherry", quantity: 60, unit: "g" },
         { name: "aceite de oliva", quantity: 15, unit: "ml" },
         { name: "limón", quantity: 0.5, unit: "unit" },
         { name: "sal", quantity: 1, unit: "tsp" },
+      ],
+    },
+  });
+
+  await upsertRecipe("recipe-fajitas-pollo", {
+    name: "Fajitas de pollo con pimientos",
+    description: "Comida sabrosa y fácil de compartir, con muchas verduras y proteína magra.",
+    mealType: "LUNCH",
+    prepTime: 10,
+    cookTime: 15,
+    instructions:
+      "1. Corta el pollo y los pimientos en tiras.\n2. Saltea todo con cebolla, comino y pimentón.\n3. Calienta las tortillas y rellénalas al gusto con yogur y lima.",
+    caloriesPerServing: 455,
+    proteinPerServing: 36,
+    carbsPerServing: 38,
+    fatPerServing: 15,
+    ingredients: {
+      create: [
+        { name: "pechuga de pollo", quantity: 180, unit: "g" },
+        { name: "tortilla integral", quantity: 2, unit: "unit" },
+        { name: "pimiento rojo", quantity: 80, unit: "g" },
+        { name: "pimiento verde", quantity: 80, unit: "g" },
+        { name: "cebolla", quantity: 70, unit: "g" },
+        { name: "yogur griego 0%", quantity: 40, unit: "g" },
+        { name: "comino", quantity: 1, unit: "tsp" },
+        { name: "pimentón dulce", quantity: 1, unit: "tsp" },
+        { name: "aceite de oliva", quantity: 10, unit: "ml" },
+      ],
+    },
+  });
+
+  await upsertRecipe("recipe-burrito-bowl", {
+    name: "Burrito bowl de arroz, ternera y alubias",
+    description: "Bol completo con inspiración tex-mex y muy buen reparto de macros.",
+    mealType: "LUNCH",
+    prepTime: 10,
+    cookTime: 20,
+    instructions:
+      "1. Cuece el arroz.\n2. Cocina la ternera picada con cebolla, comino y pimentón.\n3. Añade las alubias y el maíz y cocina 3 min.\n4. Sirve en un bol con tomate, aguacate y arroz.",
+    caloriesPerServing: 520,
+    proteinPerServing: 34,
+    carbsPerServing: 44,
+    fatPerServing: 21,
+    ingredients: {
+      create: [
+        { name: "arroz integral", quantity: 75, unit: "g" },
+        { name: "ternera picada magra", quantity: 160, unit: "g" },
+        { name: "alubias rojas cocidas", quantity: 100, unit: "g" },
+        { name: "maíz cocido", quantity: 60, unit: "g" },
+        { name: "aguacate", quantity: 50, unit: "g" },
+        { name: "tomate", quantity: 80, unit: "g" },
+        { name: "cebolla", quantity: 50, unit: "g" },
+        { name: "comino", quantity: 1, unit: "tsp" },
+        { name: "aceite de oliva", quantity: 10, unit: "ml" },
       ],
     },
   });
@@ -521,6 +693,71 @@ async function main() {
     },
   });
 
+  await upsertRecipe("recipe-skyr-kiwi-avena", {
+    name: "Skyr con kiwi y avena crujiente",
+    description: "Merienda muy proteica y ligera con un toque fresco de fruta.",
+    mealType: "SNACK",
+    prepTime: 3,
+    cookTime: 0,
+    instructions:
+      "1. Sirve el skyr en un bol.\n2. Añade el kiwi troceado y la avena por encima.\n3. Termina con canela o unas gotas de miel si te apetece.",
+    caloriesPerServing: 190,
+    proteinPerServing: 18,
+    carbsPerServing: 20,
+    fatPerServing: 3,
+    ingredients: {
+      create: [
+        { name: "skyr natural", quantity: 170, unit: "g" },
+        { name: "kiwi", quantity: 1, unit: "unit" },
+        { name: "copos de avena", quantity: 20, unit: "g" },
+        { name: "canela", quantity: 0.25, unit: "tsp" },
+      ],
+    },
+  });
+
+  await upsertRecipe("recipe-hummus-pepino", {
+    name: "Hummus con pepino y crackers integrales",
+    description: "Snack vegetal y muy saciante para media tarde.",
+    mealType: "SNACK",
+    prepTime: 5,
+    cookTime: 0,
+    instructions:
+      "1. Coloca el hummus en un cuenco pequeño.\n2. Lava y corta el pepino en bastones.\n3. Sirve con crackers para ir mojando.",
+    caloriesPerServing: 210,
+    proteinPerServing: 8,
+    carbsPerServing: 24,
+    fatPerServing: 8,
+    ingredients: {
+      create: [
+        { name: "hummus", quantity: 70, unit: "g" },
+        { name: "pepino", quantity: 120, unit: "g" },
+        { name: "crackers integrales", quantity: 30, unit: "g" },
+      ],
+    },
+  });
+
+  await upsertRecipe("recipe-bocaditos-requeson", {
+    name: "Requesón con pera y canela",
+    description: "Merienda sencilla con proteína láctea y fruta suave.",
+    mealType: "SNACK",
+    prepTime: 4,
+    cookTime: 0,
+    instructions:
+      "1. Pon el requesón en un bol.\n2. Añade la pera en cubitos.\n3. Espolvorea canela y unas nueces picadas por encima.",
+    caloriesPerServing: 205,
+    proteinPerServing: 14,
+    carbsPerServing: 18,
+    fatPerServing: 8,
+    ingredients: {
+      create: [
+        { name: "requesón", quantity: 150, unit: "g" },
+        { name: "pera", quantity: 1, unit: "unit" },
+        { name: "nueces", quantity: 10, unit: "g" },
+        { name: "canela", quantity: 0.25, unit: "tsp" },
+      ],
+    },
+  });
+
   // ═══════════════════════════════════════════════════════════════════════════
   // CENA — ligera, alta en proteína, baja en carbohidratos
   // ═══════════════════════════════════════════════════════════════════════════
@@ -576,22 +813,24 @@ async function main() {
     },
   });
 
-  await upsertRecipe("recipe-salmon-brocoli", {
-    name: "Salmón a la plancha con brócoli al vapor",
-    description: "Cena ideal para quemar grasa. Proteína + omega-3 + verdura crucífera.",
+  await upsertRecipe("recipe-pavo-calabacin", {
+    name: "Pavo salteado con calabacín y champiñones",
+    description: "Cena ligera y muy proteica con verduras salteadas en pocos minutos.",
     mealType: "DINNER",
     prepTime: 5,
-    cookTime: 15,
+    cookTime: 12,
     instructions:
-      "1. Cuece el brócoli al vapor 8-10 min hasta que esté tierno pero con mordida.\n2. Calienta una sartén y marca el salmón 3-4 min por cada lado con sal y pimienta.\n3. Sirve el salmón sobre el brócoli. Aliña con limón y aceite de oliva virgen extra.",
-    caloriesPerServing: 340,
-    proteinPerServing: 36,
-    carbsPerServing: 8,
-    fatPerServing: 18,
+      "1. Dora el pavo en una sartén caliente con aceite.\n2. Añade el calabacín, los champiñones y el ajo.\n3. Saltea hasta que las verduras estén tiernas y termina con limón y perejil.",
+    caloriesPerServing: 280,
+    proteinPerServing: 35,
+    carbsPerServing: 9,
+    fatPerServing: 11,
     ingredients: {
       create: [
-        { name: "lomo de salmón", quantity: 160, unit: "g" },
-        { name: "brócoli", quantity: 200, unit: "g" },
+        { name: "pechuga de pavo", quantity: 180, unit: "g" },
+        { name: "calabacín", quantity: 180, unit: "g" },
+        { name: "champiñones", quantity: 120, unit: "g" },
+        { name: "ajo", quantity: 2, unit: "unit" },
         { name: "aceite de oliva", quantity: 10, unit: "ml" },
         { name: "limón", quantity: 0.5, unit: "unit" },
         { name: "sal", quantity: 1, unit: "tsp" },
@@ -624,53 +863,50 @@ async function main() {
     },
   });
 
-  await upsertRecipe("recipe-gambas-esparragos", {
-    name: "Gambas al ajillo con espárragos a la plancha",
-    description: "Cena ligera y sabrosa. Muy poca grasa, mucha proteína y listo en 10 minutos.",
+  await upsertRecipe("recipe-crema-calabacin-huevo", {
+    name: "Crema de calabacín con huevo duro",
+    description: "Cena suave y reconfortante con un extra de proteína fácil de preparar.",
     mealType: "DINNER",
-    prepTime: 5,
-    cookTime: 10,
+    prepTime: 10,
+    cookTime: 20,
     instructions:
-      "1. Calienta aceite en una sartén con el ajo laminado y la guindilla.\n2. Añade las gambas peladas y saltea 2-3 min hasta que cambien de color. Añade perejil y limón.\n3. En otra sartén o plancha, marca los espárragos con sal y aceite 5-6 min.",
-    caloriesPerServing: 240,
-    proteinPerServing: 28,
-    carbsPerServing: 6,
-    fatPerServing: 12,
+      "1. Sofríe cebolla y calabacín troceado con aceite.\n2. Añade el caldo y cocina 15 min.\n3. Tritura hasta obtener una crema fina.\n4. Sirve con huevo duro picado y pimienta.",
+    caloriesPerServing: 250,
+    proteinPerServing: 14,
+    carbsPerServing: 13,
+    fatPerServing: 14,
     ingredients: {
       create: [
-        { name: "gambas peladas", quantity: 200, unit: "g" },
-        { name: "espárragos trigueros", quantity: 150, unit: "g" },
-        { name: "ajo", quantity: 3, unit: "unit" },
-        { name: "aceite de oliva", quantity: 20, unit: "ml" },
-        { name: "guindilla", quantity: 0.5, unit: "unit" },
-        { name: "limón", quantity: 0.5, unit: "unit" },
-        { name: "perejil fresco", quantity: 1, unit: "tbsp" },
+        { name: "calabacín", quantity: 300, unit: "g" },
+        { name: "cebolla", quantity: 70, unit: "g" },
+        { name: "caldo de verduras", quantity: 300, unit: "ml" },
+        { name: "huevos", quantity: 2, unit: "unit" },
+        { name: "aceite de oliva", quantity: 15, unit: "ml" },
         { name: "sal", quantity: 1, unit: "tsp" },
       ],
     },
   });
 
-  await upsertRecipe("recipe-atun-tomate", {
-    name: "Atún a la plancha con tomate y aceitunas",
-    description: "Mediterráneo, rápido y equilibrado. El atún fresco es mucho mejor que el enlatado.",
+  await upsertRecipe("recipe-tofu-teriyaki", {
+    name: "Tofu teriyaki con verduras salteadas",
+    description: "Cena vegetal completa, sabrosa y con textura crujiente por fuera.",
     mealType: "DINNER",
-    prepTime: 5,
-    cookTime: 8,
+    prepTime: 10,
+    cookTime: 12,
     instructions:
-      "1. Sazona el atún con sal, pimienta y un hilo de aceite.\n2. Marca en plancha bien caliente 2-3 min por cada lado (que quede rosa por dentro).\n3. Sirve sobre rodajas de tomate con aceitunas negras, orégano y aceite de oliva virgen extra.",
-    caloriesPerServing: 290,
-    proteinPerServing: 34,
-    carbsPerServing: 6,
-    fatPerServing: 14,
+      "1. Dora el tofu en dados en una sartén antiadherente.\n2. Añade brócoli, zanahoria y pimiento y saltea unos minutos.\n3. Incorpora la salsa teriyaki y cocina hasta que glace.",
+    caloriesPerServing: 315,
+    proteinPerServing: 21,
+    carbsPerServing: 19,
+    fatPerServing: 16,
     ingredients: {
       create: [
-        { name: "lomo de atún fresco", quantity: 180, unit: "g" },
-        { name: "tomate", quantity: 150, unit: "g" },
-        { name: "aceitunas negras", quantity: 30, unit: "g" },
-        { name: "aceite de oliva", quantity: 15, unit: "ml" },
-        { name: "orégano", quantity: 1, unit: "tsp" },
-        { name: "sal", quantity: 1, unit: "tsp" },
-        { name: "pimienta negra", quantity: 0.5, unit: "tsp" },
+        { name: "tofu firme", quantity: 180, unit: "g" },
+        { name: "brócoli", quantity: 120, unit: "g" },
+        { name: "zanahoria", quantity: 80, unit: "g" },
+        { name: "pimiento rojo", quantity: 70, unit: "g" },
+        { name: "salsa teriyaki", quantity: 25, unit: "ml" },
+        { name: "aceite de oliva", quantity: 10, unit: "ml" },
       ],
     },
   });
@@ -701,12 +937,60 @@ async function main() {
     },
   });
 
+  await upsertRecipe("recipe-berenjena-rellena", {
+    name: "Berenjena rellena de carne y verduras",
+    description: "Cena completa al horno con carne magra y verduras muy jugosas.",
+    mealType: "DINNER",
+    prepTime: 15,
+    cookTime: 30,
+    instructions:
+      "1. Asa la berenjena partida por la mitad 20 min.\n2. Vacía parte de la pulpa y sofríela con carne picada, cebolla y tomate.\n3. Rellena las mitades, añade queso y gratina 10 min.",
+    caloriesPerServing: 360,
+    proteinPerServing: 29,
+    carbsPerServing: 17,
+    fatPerServing: 18,
+    ingredients: {
+      create: [
+        { name: "berenjena", quantity: 1, unit: "unit" },
+        { name: "ternera picada magra", quantity: 140, unit: "g" },
+        { name: "cebolla", quantity: 60, unit: "g" },
+        { name: "tomate triturado", quantity: 100, unit: "g" },
+        { name: "queso rallado light", quantity: 25, unit: "g" },
+        { name: "aceite de oliva", quantity: 10, unit: "ml" },
+      ],
+    },
+  });
+
+  await upsertRecipe("recipe-pizza-tortilla", {
+    name: "Pizza rápida con base de tortilla",
+    description: "Cena rápida estilo pizza con una base ligera y un montón de sabor.",
+    mealType: "DINNER",
+    prepTime: 8,
+    cookTime: 10,
+    instructions:
+      "1. Coloca la tortilla integral en una bandeja.\n2. Cubre con tomate, mozzarella, pavo y verduras.\n3. Hornea 8-10 min hasta que el queso se funda.",
+    caloriesPerServing: 330,
+    proteinPerServing: 25,
+    carbsPerServing: 24,
+    fatPerServing: 14,
+    ingredients: {
+      create: [
+        { name: "tortilla integral", quantity: 1, unit: "unit" },
+        { name: "tomate triturado", quantity: 60, unit: "g" },
+        { name: "mozzarella light", quantity: 60, unit: "g" },
+        { name: "fiambre de pavo", quantity: 50, unit: "g" },
+        { name: "champiñones", quantity: 60, unit: "g" },
+        { name: "orégano", quantity: 1, unit: "tsp" },
+      ],
+    },
+  });
+
   console.log("✅ Seed completo. Recetas creadas:");
-  console.log("   Desayuno: 6 recetas");
-  console.log("   Comida:   9 recetas");
-  console.log("   Merienda: 5 recetas");
-  console.log("   Cena:     7 recetas");
-  console.log("   Total:    27 recetas");
+  console.log("   Desayuno: 9 recetas");
+  console.log("   Almuerzo: 11 recetas");
+  console.log("   Merienda: 8 recetas");
+  console.log("   Cena:     9 recetas");
+  console.log("   Total:    37 recetas");
 }
 
 main()

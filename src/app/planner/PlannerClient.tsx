@@ -293,6 +293,11 @@ interface MealModalProps {
 }
 
 function MealModal({ modal, weeklyPlanId, recipes, persons, onClose, onSaved }: MealModalProps) {
+  const availableRecipes = recipes.filter(
+    (recipe) =>
+      recipe.mealType === modal.slot ||
+      (modal.meal?.recipeId === recipe.id && modal.meal.recipeId === recipe.id)
+  );
   const [recipeId, setRecipeId] = useState(modal.meal?.recipeId ?? "");
   const [portions, setPortions] = useState<Record<string, string>>(
     Object.fromEntries(
@@ -359,7 +364,7 @@ function MealModal({ modal, weeklyPlanId, recipes, persons, onClose, onSaved }: 
               autoFocus
             >
               <option value="">Seleccionar receta…</option>
-              {recipes.map((r) => (
+              {availableRecipes.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.name}
                 </option>
