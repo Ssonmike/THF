@@ -138,18 +138,18 @@ export const DAY_NAMES_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes
  */
 export const SLOT_LABELS: Record<string, string> = {
   BREAKFAST: "Desayuno",
-  LUNCH: "Comida",
-  DINNER: "Cena",
+  LUNCH: "Almuerzo",
   SNACK: "Merienda",
+  DINNER: "Cena",
 };
 
-export const SLOT_ORDER = ["BREAKFAST", "LUNCH", "DINNER", "SNACK"];
+export const SLOT_ORDER = ["BREAKFAST", "LUNCH", "SNACK", "DINNER"];
 
 export const MEAL_TYPE_LABELS: Record<string, string> = {
   BREAKFAST: "Desayuno",
-  LUNCH: "Comida",
-  DINNER: "Cena",
+  LUNCH: "Almuerzo",
   SNACK: "Merienda",
+  DINNER: "Cena",
 };
 
 export const MEAL_TYPES = ["BREAKFAST", "LUNCH", "DINNER", "SNACK"] as const;
