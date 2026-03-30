@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { href: "/recipes", label: "Recetas", icon: "☰" },
   { href: "/planner", label: "Planner", icon: "▦" },
   { href: "/shopping", label: "Compra", icon: "◻" },
+  { href: "/nutrition", label: "Nutrición", icon: "◈" },
 ] as const;
 
 export default function Nav() {

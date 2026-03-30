@@ -293,6 +293,9 @@ interface MealModalProps {
 }
 
 function MealModal({ modal, weeklyPlanId, recipes, persons, onClose, onSaved }: MealModalProps) {
+  // Only show recipes that match this slot's meal type
+  const slotRecipes = recipes.filter((r) => r.mealType === modal.slot);
+
   const [recipeId, setRecipeId] = useState(modal.meal?.recipeId ?? "");
   const [portions, setPortions] = useState<Record<string, string>>(
     Object.fromEntries(
@@ -351,20 +354,31 @@ function MealModal({ modal, weeklyPlanId, recipes, persons, onClose, onSaved }: 
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
           <div className="form-group">
-            <label htmlFor="modal-recipe">Receta *</label>
+            <label htmlFor="modal-recipe">
+              Receta de {SLOT_LABELS[modal.slot]}{" "}
+              <span style={{ fontWeight: "var(--weight-normal)", color: "var(--color-text-tertiary)" }}>
+                ({slotRecipes.length})
+              </span>
+            </label>
             <select
               id="modal-recipe"
               value={recipeId}
               onChange={(e) => setRecipeId(e.target.value)}
               autoFocus
             >
-              <option value="">Seleccionar receta…</option>
-              {recipes.map((r) => (
+              <option value="">Seleccionar receta de {SLOT_LABELS[modal.slot]}…</option>
+              {slotRecipes.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.name}
                 </option>
               ))}
             </select>
+            {slotRecipes.length === 0 && (
+              <p className="form-hint">
+                No hay recetas de {SLOT_LABELS[modal.slot]} todavía.{" "}
+                <a href="/recipes/new" style={{ color: "var(--color-accent)" }}>Añadir una</a>
+              </p>
+            )}
           </div>
 
           <div>
