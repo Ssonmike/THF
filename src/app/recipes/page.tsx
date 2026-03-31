@@ -10,9 +10,9 @@ export const metadata = {
 const FILTER_OPTIONS = [
   { value: "ALL", label: "Todas" },
   { value: "BREAKFAST", label: "Desayuno" },
-  { value: "LUNCH", label: "Comida" },
-  { value: "DINNER", label: "Cena" },
+  { value: "LUNCH", label: "Almuerzo" },
   { value: "SNACK", label: "Merienda" },
+  { value: "DINNER", label: "Cena" },
 ];
 
 interface Props {
