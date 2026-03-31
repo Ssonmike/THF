@@ -23,12 +23,67 @@ datasource db {
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model Person {
-  id       String               @id @default(cuid())
-  name     String               @unique
-  slug     String               @unique // e.g. "miguel", "ana"
-  portions PlannedMealPortion[]
+  id                String               @id @default(cuid())
+  name              String               @unique
+  slug              String               @unique // e.g. "miguel", "ana"
+  portions          PlannedMealPortion[]
+  nutritionProfile  NutritionProfile?
 
   @@map("persons")
+}
+
+// ─── Nutrition ─────────────────────────────────────────────────────────────────
+
+model NutritionProfile {
+  id       String  @id @default(cuid())
+  person   Person  @relation(fields: [personId], references: [id], onDelete: Cascade)
+  personId String  @unique
+
+  // Section 1 — Stats
+  age            Int?
+  sex            String?   // MALE | FEMALE
+  heightCm       Float?
+  weightKg       Float?
+  goalWeight     String?   // number or description
+  timeline       String?   // "steady" | "fast" | free text
+
+  // Section 2 — Lifestyle
+  jobType          String?
+  exercisePerWeek  Int?
+  exerciseType     String?
+  sleepHours       Float?
+  stressLevel      String?  // low | moderate | high
+  alcohol          String?  // description
+
+  // Section 3 — Food preferences
+  favoriteMeals       String?
+  hatedFoods          String?
+  dietaryRestrictions String?
+  cookingStyle        String?  // scratch | quick | batch
+  foodAdventurousness Int?     // 1–10
+
+  // Section 4 — Snack habits
+  currentSnacks     String?
+  snackReason       String?   // hunger | boredom | habit | multiple
+  snackPreference   String?   // sweet | savory | both
+  lateNightSnacking Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  plan NutritionPlan?
+
+  @@map("nutrition_profiles")
+}
+
+model NutritionPlan {
+  id          String           @id @default(cuid())
+  profile     NutritionProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId   String           @unique
+  content     String           // AI-generated markdown plan
+  generatedAt DateTime         @default(now())
+
+  @@map("nutrition_plans")
 }
 
 model Recipe {
