@@ -1,35 +1,14 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import {
+  NutritionPlanContentSchema,
+  NutritionProfileSchema,
+  type NutritionProfileInput,
+} from "@/lib/nutrition";
 import { revalidatePath } from "next/cache";
 
-export interface NutritionProfileData {
-  // Section 1
-  age?: number;
-  sex?: string;
-  heightCm?: number;
-  weightKg?: number;
-  goalWeight?: string;
-  timeline?: string;
-  // Section 2
-  jobType?: string;
-  exercisePerWeek?: number;
-  exerciseType?: string;
-  sleepHours?: number;
-  stressLevel?: string;
-  alcohol?: string;
-  // Section 3
-  favoriteMeals?: string;
-  hatedFoods?: string;
-  dietaryRestrictions?: string;
-  cookingStyle?: string;
-  foodAdventurousness?: number;
-  // Section 4
-  currentSnacks?: string;
-  snackReason?: string;
-  snackPreference?: string;
-  lateNightSnacking?: boolean;
-}
+export type NutritionProfileData = NutritionProfileInput;
 
 export async function getPersonWithProfile(slug: string) {
   return prisma.person.findUnique({
@@ -43,13 +22,21 @@ export async function saveNutritionProfile(
   data: NutritionProfileData
 ): Promise<{ success: boolean; profileId?: string; error?: string }> {
   try {
+    const parsed = NutritionProfileSchema.safeParse(data);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: parsed.error.errors[0]?.message ?? "Perfil nutricional inválido",
+      };
+    }
+
     const person = await prisma.person.findUnique({ where: { slug: personSlug } });
     if (!person) return { success: false, error: "Persona no encontrada" };
 
     const profile = await prisma.nutritionProfile.upsert({
       where: { personId: person.id },
-      update: { ...data, updatedAt: new Date() },
-      create: { personId: person.id, ...data },
+      update: { ...parsed.data, updatedAt: new Date() },
+      create: { personId: person.id, ...parsed.data },
     });
 
     revalidatePath(`/nutrition/${personSlug}`);
@@ -65,10 +52,18 @@ export async function saveNutritionPlan(
   content: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const parsedContent = NutritionPlanContentSchema.safeParse(content);
+    if (!parsedContent.success) {
+      return {
+        success: false,
+        error: parsedContent.error.errors[0]?.message ?? "Plan nutricional inválido",
+      };
+    }
+
     await prisma.nutritionPlan.upsert({
       where: { profileId },
-      update: { content, generatedAt: new Date() },
-      create: { profileId, content },
+      update: { content: parsedContent.data, generatedAt: new Date() },
+      create: { profileId, content: parsedContent.data },
     });
     return { success: true };
   } catch (e) {

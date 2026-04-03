@@ -38,6 +38,7 @@ npm install
 # 2. Configurar entorno
 cp .env.example .env
 # DATABASE_URL ya está configurado para SQLite local
+# Si vas a usar nutrición con IA, añade también ANTHROPIC_API_KEY en .env
 
 # 3. Crear base de datos y datos iniciales
 npm run db:generate
@@ -82,6 +83,13 @@ npm run setup
 ```
 
 ---
+
+
+## Nutrición con IA
+
+- Requiere `ANTHROPIC_API_KEY` en `.env`
+- La generación del plan nutricional usa un modelo externo
+- Esta parte del sistema es la más sensible a cambios de formato y debe considerarse más frágil que el core de recetas/planner
 
 ## Producción local (sin Docker)
 
@@ -267,3 +275,10 @@ Por defecto se crean Miguel y Ana al hacer seed. Para añadir más personas usa 
 npm test              # 64 tests — shopping, fechas, validaciones
 npm run test:coverage  # Con cobertura HTML en ./coverage/
 ```
+
+
+---
+
+## Operación
+
+Consulta `OPERATIONS.md` para seguridad mínima, entorno, backup/restore y checks operativos.

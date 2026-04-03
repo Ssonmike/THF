@@ -3,6 +3,11 @@
  * TheHomeFood — Backup script
  * Creates a timestamped copy of the SQLite database.
  *
+ * Note: copying SQLite while the app is writing can produce inconsistent backups.
+ * Best practice:
+ *   - stop the app/container first, or
+ *   - ensure no writes are happening during the copy.
+ *
  * Usage:
  *   node scripts/backup.js
  *   node scripts/backup.js ./my-backup-dir
@@ -15,11 +20,9 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 
-// Find the database file
 function findDbPath() {
   const envDb = process.env.DATABASE_URL?.replace("file:", "");
   if (envDb) {
-    // Resolve relative to prisma/ directory
     const candidates = [
       path.resolve(root, "prisma", envDb.startsWith("./") ? envDb.slice(2) : envDb),
       path.resolve(root, envDb),
@@ -29,7 +32,7 @@ function findDbPath() {
       if (fs.existsSync(c)) return c;
     }
   }
-  // Fallback defaults
+
   const defaults = [
     path.join(root, "prisma", "dev.db"),
     path.join(root, "data", "prod.db"),
@@ -51,7 +54,18 @@ fs.mkdirSync(backupDir, { recursive: true });
 
 const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 const backupFile = path.join(backupDir, `thf-backup-${timestamp}.db`);
+const walFile = `${dbPath}-wal`;
+const shmFile = `${dbPath}-shm`;
+
+if (fs.existsSync(walFile)) {
+  console.warn("⚠️ WAL file detected.");
+  console.warn("   For a fully reliable backup, stop the app/container before copying SQLite files.");
+}
 
 fs.copyFileSync(dbPath, backupFile);
+if (fs.existsSync(walFile)) fs.copyFileSync(walFile, `${backupFile}-wal`);
+if (fs.existsSync(shmFile)) fs.copyFileSync(shmFile, `${backupFile}-shm`);
+
 console.log(`✅ Backup created: ${backupFile}`);
 console.log(`   Source: ${dbPath}`);
+console.log("   Recommendation: verify restore periodically and avoid hot backups during writes.");

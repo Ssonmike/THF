@@ -47,3 +47,11 @@ prisma/*.db-wal
 
 # vitest
 /coverage/
+
+# local runtime artifacts
+*.log
+debug-*.js
+prisma/data/
+data/*.db
+data/*.db-*
+

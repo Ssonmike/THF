@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { NutritionProfileData } from "@/actions/nutrition";
 import { saveNutritionProfile, saveNutritionPlan } from "@/actions/nutrition";
+import { applyNutritionPlanToPlanner } from "@/actions/nutrition-apply";
 import styles from "./nutrition-detail.module.css";
 
 interface StoredProfile {
@@ -32,6 +33,16 @@ interface StoredProfile {
   lateNightSnacking?: boolean;
 }
 
+const ALLOWED_SEX = new Set<NonNullable<NutritionProfileData["sex"]>>(["MALE", "FEMALE"]);
+const ALLOWED_STRESS = new Set<NonNullable<NutritionProfileData["stressLevel"]>>(["low", "moderate", "high"]);
+const ALLOWED_COOKING = new Set<NonNullable<NutritionProfileData["cookingStyle"]>>(["scratch", "quick", "batch"]);
+const ALLOWED_SNACK_REASON = new Set<NonNullable<NutritionProfileData["snackReason"]>>(["hunger", "boredom", "habit", "multiple"]);
+const ALLOWED_SNACK_PREFERENCE = new Set<NonNullable<NutritionProfileData["snackPreference"]>>(["sweet", "savory", "both"]);
+
+function asAllowedValue<T extends string>(value: string | null | undefined, allowed: Set<T>): T | undefined {
+  return value && allowed.has(value as T) ? (value as T) : undefined;
+}
+
 interface Props {
   personSlug: string;
   personName: string;
@@ -43,7 +54,7 @@ function profileToFormData(p: StoredProfile | null): NutritionProfileData {
   if (!p) return {};
   return {
     age: p.age ?? undefined,
-    sex: p.sex ?? undefined,
+    sex: asAllowedValue(p.sex, ALLOWED_SEX),
     heightCm: p.heightCm ?? undefined,
     weightKg: p.weightKg ?? undefined,
     goalWeight: p.goalWeight ?? undefined,
@@ -52,21 +63,84 @@ function profileToFormData(p: StoredProfile | null): NutritionProfileData {
     exercisePerWeek: p.exercisePerWeek ?? undefined,
     exerciseType: p.exerciseType ?? undefined,
     sleepHours: p.sleepHours ?? undefined,
-    stressLevel: p.stressLevel ?? undefined,
+    stressLevel: asAllowedValue(p.stressLevel, ALLOWED_STRESS),
     alcohol: p.alcohol ?? undefined,
     favoriteMeals: p.favoriteMeals ?? undefined,
     hatedFoods: p.hatedFoods ?? undefined,
     dietaryRestrictions: p.dietaryRestrictions ?? undefined,
-    cookingStyle: p.cookingStyle ?? undefined,
+    cookingStyle: asAllowedValue(p.cookingStyle, ALLOWED_COOKING),
     foodAdventurousness: p.foodAdventurousness ?? undefined,
     currentSnacks: p.currentSnacks ?? undefined,
-    snackReason: p.snackReason ?? undefined,
-    snackPreference: p.snackPreference ?? undefined,
+    snackReason: asAllowedValue(p.snackReason, ALLOWED_SNACK_REASON),
+    snackPreference: asAllowedValue(p.snackPreference, ALLOWED_SNACK_PREFERENCE),
     lateNightSnacking: p.lateNightSnacking ?? false,
   };
 }
 
 const TOTAL_STEPS = 4;
+
+
+const MEAL_ROW_LABELS = [
+  { key: "breakfast", label: "Desayuno" },
+  { key: "lunch", label: "Comida" },
+  { key: "dinner", label: "Cena" },
+  { key: "snack", label: "Snack/Postre" },
+];
+
+type WeeklyDay = {
+  day: string;
+  breakfast?: string;
+  lunch?: string;
+  dinner?: string;
+  snack?: string;
+};
+
+function parseWeeklyPlan(lines: string[]): WeeklyDay[] | null {
+  const days: WeeklyDay[] = [];
+  let current: WeeklyDay | null = null;
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+
+    const dayMatch = line.match(/^(lunes|martes|miércoles|jueves|viernes|sábado|domingo)/i);
+    if (dayMatch) {
+      if (current) days.push(current);
+      current = { day: capitalize(dayMatch[1].toLowerCase()) };
+      continue;
+    }
+
+    if (!current) continue;
+
+    if (/^desayuno/i.test(line)) {
+      current.breakfast = cleanMealLine(line);
+      continue;
+    }
+    if (/^(comida|almuerzo)/i.test(line)) {
+      current.lunch = cleanMealLine(line);
+      continue;
+    }
+    if (/^cena/i.test(line)) {
+      current.dinner = cleanMealLine(line);
+      continue;
+    }
+    if (/^(postre|snack|merienda)/i.test(line)) {
+      current.snack = cleanMealLine(line);
+      continue;
+    }
+  }
+
+  if (current) days.push(current);
+  return days.length >= 3 ? days : null;
+}
+
+function cleanMealLine(line: string) {
+  return line.replace(/^(desayuno|comida|almuerzo|cena|postre|snack|merienda)\s*[:\-–]?\s*/i, '').trim();
+}
+
+function capitalize(v: string) {
+  return v.charAt(0).toUpperCase() + v.slice(1);
+}
 
 const STEP_LABELS = [
   "Mis datos",
@@ -88,10 +162,25 @@ export default function NutritionClient({ personSlug, personName, initialProfile
   const [generating, setGenerating] = useState(false);
   const [streamedPlan, setStreamedPlan] = useState(initialPlan ?? "");
   const [error, setError] = useState<string | null>(null);
+  const [applyingPlan, setApplyingPlan] = useState(false);
+  const [applyMessage, setApplyMessage] = useState<string | null>(null);
   const planRef = useRef<HTMLDivElement>(null);
 
   function update(field: keyof NutritionProfileData, value: string | number | boolean | undefined) {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleApplyToPlanner() {
+    setApplyingPlan(true);
+    setApplyMessage(null);
+    const result = await applyNutritionPlanToPlanner(personSlug);
+    if (result.success) {
+      setApplyMessage(`Plan aplicado al planner semanal (${result.data?.week ?? "semana actual"}) · ${result.data?.createdRecipes ?? 0} recetas nuevas · ${result.data?.upgradedRecipes ?? 0} recetas mejoradas · ${result.data?.appliedMeals ?? 0} comidas aplicadas`);
+      router.refresh();
+    } else {
+      setError(result.error ?? "No se pudo aplicar al planner");
+    }
+    setApplyingPlan(false);
   }
 
   async function handleGenerate() {
@@ -138,7 +227,10 @@ export default function NutritionClient({ personSlug, personName, initialProfile
       }
 
       // 3. Save completed plan
-      await saveNutritionPlan(profileId, fullText);
+      const savePlanResult = await saveNutritionPlan(profileId, fullText);
+      if (!savePlanResult.success) {
+        throw new Error(savePlanResult.error ?? "No se pudo guardar el plan generado");
+      }
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
@@ -167,15 +259,28 @@ export default function NutritionClient({ personSlug, personName, initialProfile
             >
               {generating ? "Generando…" : "Regenerar plan"}
             </button>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={handleApplyToPlanner}
+              disabled={applyingPlan || generating || !streamedPlan}
+            >
+              {applyingPlan ? "Aplicando…" : "Aplicar al planner semanal"}
+            </button>
           </div>
         </div>
+
+        {applyMessage && (
+          <div className="alert alert-success" style={{ marginBottom: "var(--space-4)" }}>
+            {applyMessage}
+          </div>
+        )}
 
         {error && (
           <div className="alert alert-error" style={{ marginBottom: "var(--space-4)" }}>
             {error}
             {error.includes("ANTHROPIC_API_KEY") && (
               <p style={{ marginTop: "var(--space-2)", fontSize: "var(--text-sm)" }}>
-                Añade tu clave de API en el archivo <code>.env</code>: <code>ANTHROPIC_API_KEY="sk-..."</code>
+                Añade tu clave de API en el archivo <code>.env</code>: <code>ANTHROPIC_API_KEY=&quot;sk-...&quot;</code>
               </p>
             )}
           </div>
@@ -238,7 +343,13 @@ export default function NutritionClient({ personSlug, personName, initialProfile
         ))}
       </div>
 
-      {error && (
+      {applyMessage && (
+          <div className="alert alert-success" style={{ marginBottom: "var(--space-4)" }}>
+            {applyMessage}
+          </div>
+        )}
+
+        {error && (
         <div className="alert alert-error" style={{ marginBottom: "var(--space-4)" }}>
           {error}
         </div>
@@ -683,38 +794,121 @@ function Section4({
 // ─── Plan Renderer ─────────────────────────────────────────────────────────────
 
 function PlanRenderer({ text, streaming }: { text: string; streaming: boolean }) {
-  // Simple markdown-like rendering: split into lines and format headers + bold
   const lines = text.split("\n");
+  const blocks: Array<{ title: string; content: string[] }> = [];
+  let current: { title: string; content: string[] } | null = null;
+
+  for (const line of lines) {
+    if (line.startsWith("## ")) {
+      if (current) blocks.push(current);
+      current = { title: line.slice(3).trim(), content: [] };
+      continue;
+    }
+
+    if (!current) current = { title: "Resumen", content: [] };
+    current.content.push(line);
+  }
+
+  if (current) blocks.push(current);
 
   return (
-    <div className={styles.planText}>
-      {lines.map((line, i) => {
-        if (line.startsWith("## ")) {
-          return <h2 key={i} className={styles.planH2}>{line.slice(3)}</h2>;
-        }
-        if (line.startsWith("### ")) {
-          return <h3 key={i} className={styles.planH3}>{line.slice(4)}</h3>;
-        }
-        if (line.startsWith("**") && line.endsWith("**") && line.length > 4) {
-          return <p key={i} className={styles.planBold}>{line.slice(2, -2)}</p>;
-        }
-        if (line.startsWith("- ") || line.startsWith("* ")) {
-          return <li key={i} className={styles.planLi}>{renderInline(line.slice(2))}</li>;
-        }
-        if (/^\d+\. /.test(line)) {
-          return <li key={i} className={styles.planLi}>{renderInline(line.replace(/^\d+\. /, ""))}</li>;
-        }
-        if (line.trim() === "---") {
-          return <hr key={i} className={styles.planHr} />;
-        }
-        if (line.trim() === "") {
-          return <div key={i} className={styles.planSpacer} />;
-        }
-        return <p key={i} className={styles.planP}>{renderInline(line)}</p>;
+    <div className={styles.planDocument}>
+      {blocks.map((block, blockIndex) => {
+        const isWeeklySection = /plan de 7 días|plan de 7 dias/i.test(block.title);
+        const weekly = isWeeklySection ? parseWeeklyPlan(block.content) : null;
+
+        return (
+          <section key={blockIndex} className={styles.planSectionCard}>
+            <h2 className={styles.planSectionTitle}>{block.title}</h2>
+            <div className={styles.planSectionBody}>
+              {weekly ? <WeeklyPlanGrid days={weekly} /> : renderBlock(block.content)}
+            </div>
+          </section>
+        );
       })}
       {streaming && <span className={styles.cursor}>▌</span>}
     </div>
   );
+}
+
+function renderBlock(lines: string[]) {
+  const nodes: React.ReactNode[] = [];
+  let listItems: React.ReactNode[] = [];
+
+  const flushList = (key: string) => {
+    if (listItems.length > 0) {
+      nodes.push(
+        <ul key={key} className={styles.planList}>
+          {listItems}
+        </ul>
+      );
+      listItems = [];
+    }
+  };
+
+  lines.forEach((line, i) => {
+    const key = `line-${i}`;
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      flushList(`list-${i}`);
+      return;
+    }
+
+    if (trimmed === "---") {
+      flushList(`list-${i}`);
+      nodes.push(<hr key={key} className={styles.planHr} />);
+      return;
+    }
+
+    if (line.startsWith("### ")) {
+      flushList(`list-${i}`);
+      nodes.push(
+        <h3 key={key} className={styles.planSubTitle}>
+          {line.slice(4)}
+        </h3>
+      );
+      return;
+    }
+
+    if (line.startsWith("- ") || line.startsWith("* ")) {
+      listItems.push(
+        <li key={key} className={styles.planListItem}>
+          {renderInline(line.slice(2))}
+        </li>
+      );
+      return;
+    }
+
+    if (/^\d+\. /.test(line)) {
+      listItems.push(
+        <li key={key} className={styles.planListItem}>
+          {renderInline(line.replace(/^\d+\. /, ""))}
+        </li>
+      );
+      return;
+    }
+
+    flushList(`list-${i}`);
+
+    if (line.startsWith("**") && line.endsWith("**") && line.length > 4) {
+      nodes.push(
+        <p key={key} className={styles.planLead}>
+          {line.slice(2, -2)}
+        </p>
+      );
+      return;
+    }
+
+    nodes.push(
+      <p key={key} className={styles.planParagraph}>
+        {renderInline(line)}
+      </p>
+    );
+  });
+
+  flushList("list-final");
+  return nodes;
 }
 
 function renderInline(text: string): React.ReactNode {
@@ -722,5 +916,54 @@ function renderInline(text: string): React.ReactNode {
   const parts = text.split(/\*\*(.*?)\*\*/g);
   return parts.map((part, i) =>
     i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+  );
+}
+
+
+function WeeklyPlanGrid({ days }: { days: WeeklyDay[] }) {
+  return (
+    <>
+      <div className={styles.weeklyPlanDesktop}>
+        <div className={styles.weeklyGrid} style={{ gridTemplateColumns: `140px repeat(${days.length}, minmax(180px, 1fr))` }}>
+          <div className={styles.weeklyCorner} />
+          {days.map((day) => (
+            <div key={day.day} className={styles.weeklyDayHeader}>{day.day}</div>
+          ))}
+
+          {MEAL_ROW_LABELS.map((row) => (
+            <>
+              <div key={`${row.key}-label`} className={styles.weeklyRowLabel}>{row.label}</div>
+              {days.map((day) => (
+                <div key={`${day.day}-${row.key}`} className={styles.weeklyCell}>
+                  {day[row.key as keyof WeeklyDay] ? (
+                    <p className={styles.weeklyCellText}>{day[row.key as keyof WeeklyDay] as string}</p>
+                  ) : (
+                    <span className={styles.weeklyCellEmpty}>—</span>
+                  )}
+                </div>
+              ))}
+            </>
+          ))}
+        </div>
+      </div>
+
+      <div className={styles.weeklyPlanMobile}>
+        {days.map((day) => (
+          <article key={day.day} className={styles.mobileDayCard}>
+            <h3 className={styles.mobileDayTitle}>{day.day}</h3>
+            {MEAL_ROW_LABELS.map((row) => {
+              const value = day[row.key as keyof WeeklyDay] as string | undefined;
+              if (!value) return null;
+              return (
+                <div key={`${day.day}-${row.key}`} className={styles.mobileMealRow}>
+                  <span className={styles.mobileMealLabel}>{row.label}</span>
+                  <p className={styles.mobileMealValue}>{value}</p>
+                </div>
+              );
+            })}
+          </article>
+        ))}
+      </div>
+    </>
   );
 }

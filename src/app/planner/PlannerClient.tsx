@@ -359,8 +359,21 @@ function MealModal({ modal, weeklyPlanId, recipes, persons, onClose, onSaved }: 
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
           <div className="form-group">
-            <label htmlFor="modal-recipe">
-            )}
+            <label htmlFor="modal-recipe">Receta</label>
+            <select
+              id="modal-recipe"
+              value={recipeId}
+              onChange={(e) => setRecipeId(e.target.value)}
+            >
+              <option value="">Selecciona una receta</option>
+              {recipes
+                .filter((r) => r.mealType === modal.slot)
+                .map((recipe) => (
+                  <option key={recipe.id} value={recipe.id}>
+                    {recipe.name} ({MEAL_TYPE_LABELS[recipe.mealType]})
+                  </option>
+                ))}
+            </select>
           </div>
 
           <div>

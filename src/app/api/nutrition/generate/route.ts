@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import type { NutritionProfileData } from "@/actions/nutrition";
+import { GenerateNutritionBodySchema } from "@/lib/nutrition";
 
 interface GenerateBody {
   profile: NutritionProfileData;
@@ -78,7 +79,30 @@ Aplica el multiplicador de actividad correcto. Establece un déficit de 500 kcal
 Proteínas, carbohidratos y grasas en gramos con justificación clara.
 
 ## 4. 📅 PLAN DE 7 DÍAS
-Un día temático por día (ej: "Lunes Mediterráneo"). Para cada día: desayuno, comida, cena y postre opcional. Incluye calorías y macros por comida. Señala los platos aptos para meal prep. Incluye al menos 2 comidas a la semana que parezcan un capricho pero sean bajas en calorías. Usa las comidas favoritas de ${name} como inspiración. Nada de pollo con brócoli aburrido a menos que ${name} lo haya pedido.
+Un día temático por día (ej: "Lunes Mediterráneo"). Para que la app pueda renderizarlo bien, escribe esta sección SIEMPRE con esta estructura exacta por cada día:
+
+### Lunes Mediterráneo
+Desayuno: ...
+Comida: ...
+Cena: ...
+Postre: ...
+
+### Martes ...
+Desayuno: ...
+Comida: ...
+Cena: ...
+Postre: ...
+
+Y así sucesivamente durante 7 días. Incluye calorías y macros por comida dentro de cada línea cuando sea posible. Usa las comidas favoritas de ${name} como inspiración. Nada de pollo con brócoli aburrido a menos que ${name} lo haya pedido.
+
+REGLAS DE FORMATO OBLIGATORIAS PARA ESTA SECCIÓN:
+- Una sola línea por comida.
+- NO uses negritas dentro de la línea de comida.
+- NO añadas comentarios conversacionales tipo "te prometo que sabe increíble", "sí, en serio", etc.
+- NO añadas notas de meal prep dentro de la línea. Si quieres marcar meal prep, añade al final solo [Meal prep].
+- NO uses emojis dentro de las líneas de comida.
+- Mantén el nombre del plato al principio y luego ingredientes o descripción breve.
+- Si incluyes macros, usa siempre este formato exacto al final: | 520 kcal | P: 45g | C: 40g | G: 22g
 
 ## 5. 🍎 ALTERNATIVAS DE SNACK
 Para cada snack actual, sugiere una alternativa más saludable que llene el mismo hueco. Mínimo 5 opciones con calorías. Hazlos apetecibles.
@@ -108,9 +132,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: GenerateBody;
+  let rawBody: GenerateBody;
   try {
-    body = await req.json();
+    rawBody = await req.json();
   } catch {
     return new Response(JSON.stringify({ error: "Cuerpo de la petición inválido" }), {
       status: 400,
@@ -118,15 +142,23 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  const parsed = GenerateNutritionBodySchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return new Response(JSON.stringify({ error: "Payload inválido", details: parsed.error.flatten() }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const body = parsed.data;
   const client = new Anthropic({ apiKey });
 
   const readable = new ReadableStream({
     async start(controller) {
       try {
         const stream = client.messages.stream({
-          model: "claude-opus-4-6",
-          max_tokens: 64000,
-          thinking: { type: "adaptive" },
+          model: "claude-sonnet-4-5",
+          max_tokens: 12000,
           messages: [
             {
               role: "user",
@@ -136,10 +168,7 @@ export async function POST(req: NextRequest) {
         });
 
         for await (const event of stream) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
+          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
             controller.enqueue(new TextEncoder().encode(event.delta.text));
           }
         }
@@ -156,6 +185,7 @@ export async function POST(req: NextRequest) {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "X-Content-Type-Options": "nosniff",
+      "Cache-Control": "no-store",
     },
   });
 }
